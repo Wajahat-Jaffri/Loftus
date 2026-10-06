@@ -15,9 +15,14 @@ import {
   Alert,
 } from 'react-native';
 import { ICONS, IMAGES } from '../assets';
-import AroundThisHome from '../screens/AroundThisHome';
-import OpenHouses from '../screens/OpenHouses';
-import PaymentEstimate from '../screens/PaymentEstimate';
+import AroundThisHome from './AroundThisHome';
+import OpenHouses from './OpenHouses';
+import PaymentEstimate from './PaymentEstimate';
+import ListingHistory from './ListingHistory';
+import LocationSection from './LocationSection';
+import Recommendations from './Recommendations';
+import BottomActionBar from './BottomActionBar';
+import { useFavorites } from '../context/FavoritesContext';
 
 const ORANGE = '#FF6C40';
 const GREY = '#9E9E9E';
@@ -124,7 +129,9 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
   const indexRef = useRef(0);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  // Favorites are shared by the whole app (see FavoritesContext).
+  const { isFavorite: isFavoriteId, toggleFavorite } = useFavorites();
+  const isFavorite = isFavoriteId(property.id);
   const [secondsLeft, setSecondsLeft] = useState(property.offerSeconds);
   // Turned off while a slider is being dragged so the page doesn't scroll.
   const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -157,6 +164,12 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
       indexRef.current = index;
       setActiveIndex(index);
     }
+  };
+
+  const openGallery = () => {
+    navigation?.navigate('GalleryViewScreen', {
+      property: route?.params?.property ?? property,
+    });
   };
 
   const handleShare = async () => {
@@ -238,17 +251,24 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
             getItemLayout={(_, i) => ({ length: SCREEN_W, offset: SCREEN_W * i, index: i })}
             scrollEventThrottle={16}
             onScroll={handleHeroScroll}
-            renderItem={({ item }) => <Image source={item} style={styles.heroImage} />}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                activeOpacity={0.95}
+                onPress={openGallery}
+              >
+                <Image source={item} style={styles.heroImage} />
+              </TouchableOpacity>
+            )}
           />
 
           <TouchableOpacity
             style={styles.favoriteButton}
             activeOpacity={0.8}
-            onPress={() => setIsFavorite((f) => !f)}
+            onPress={() => toggleFavorite(route?.params?.property ?? property)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Image
-              source={ICONS.heart}
+              source={isFavorite && ICONS.heartFilled ? ICONS.heartFilled : ICONS.heart}
               style={[styles.favoriteIcon, isFavorite && { tintColor: ORANGE }]}
             />
           </TouchableOpacity>
@@ -290,6 +310,15 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
             );
           })}
         </ScrollView>
+
+        {/* Gallery button (normal layout, always visible) */}
+        <TouchableOpacity
+          style={styles.galleryRow}
+          activeOpacity={0.85}
+          onPress={openGallery}
+        >
+          <Text style={styles.galleryRowText}>View all photos  ›</Text>
+        </TouchableOpacity>
 
         {/* Title / address / price */}
         <View style={styles.titleRow}>
@@ -372,7 +401,18 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
         <View style={styles.divider} />
 
         <PaymentEstimate onSliderInteract={(active) => setScrollEnabled(!active)} />
+
+        <ListingHistory />
+
+        <LocationSection onExpand={() => navigation?.navigate('MapViewScreen')} />
+
+        <Recommendations
+          currentId={property.id}
+          onPressItem={(p) => navigation?.push('PropertyDetailsScreen', { property: p })}
+        />
       </ScrollView>
+
+      <BottomActionBar />
     </SafeAreaView>
   );
 };
@@ -382,7 +422,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
-    marginTop: 46,
   },
 
   // Header
@@ -451,6 +490,21 @@ const styles = StyleSheet.create({
     height: 26,
     tintColor: '#FFFFFF',
     resizeMode: 'contain',
+  },
+  galleryRow: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: ORANGE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  galleryRowText: {
+    fontFamily: FONT.medium,
+    fontSize: 12,
+    color: ORANGE,
   },
   dots: {
     position: 'absolute',
@@ -552,7 +606,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   sectionTitle: {
-    fontFamily: FONT.medium,
+    fontFamily: FONT.semibold,
     fontSize: 14,
     color: TEXT_DARK,
     marginBottom: 10,

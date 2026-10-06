@@ -6,92 +6,68 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
-  Modal,
-  Pressable,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
   StatusBar,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ScreenHeader from '../components/ScreenHeader';
 import LeaseCard from '../components/LeaseCard';
-import { SelectField } from '../components/FormControls';
 import { ICONS } from '../assets';
-import { LEASES, SAVED_CARDS, SAVED_BANKS } from '../constants/paymentsData';
 
 const ORANGE = '#FF6C40';
 const TEXT = '#1C1C1C';
+const BORDER = '#E6E6E6';
+
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
   semibold: 'Poppins-SemiBold',
 };
 
-const money = (n) => `$${n.toFixed(2)}`;
+// Used only if the screen is opened without a lease.
+const DEFAULT_LEASE = {
+  id: 'default',
+  title: 'Woodland Apartment',
+  address: '1012 Ocean avenue, New York, USA',
+  balance: '600',
+  dueDate: '03/06/2025',
+  status: 'Active',
+};
 
-const SummaryRow = ({ label, value, bold }) => (
-  <View style={styles.summaryRow}>
-    <Text style={[styles.summaryLabel, bold && styles.summaryBold]}>{label}</Text>
-    <Text style={[styles.summaryValue, bold && styles.summaryBold]}>{value}</Text>
-  </View>
-);
+const CARDS = ['**************4242', '**************1881'];
 
-const AmexLogo = () => (
-  <View style={styles.amexBox}>
-    <Image source={ICONS.amex} style={styles.amexText} resizeMode="contain" />
+const money = (n) => `$${(Number.isFinite(n) ? n : 0).toFixed(2)}`;
+
+const Row = ({ label, value, bold }) => (
+  <View style={styles.row}>
+    <Text style={[styles.rowLabel, bold && styles.rowBold]}>{label}</Text>
+    <Text style={[styles.rowValue, bold && styles.rowBold]}>{value}</Text>
   </View>
 );
 
 const PaymentDetailsScreen = ({ navigation, route }) => {
-  const lease = (route && route.params && route.params.lease) || LEASES[0];
+  const lease = route?.params?.lease ?? DEFAULT_LEASE;
 
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('Credit Card'); // 'Credit Card' | 'Bank Account'
-  const [cards, setCards] = useState(SAVED_CARDS);
-  const [banks, setBanks] = useState(SAVED_BANKS);
-  const [selectedCard, setSelectedCard] = useState(SAVED_CARDS[0]);
-  const [selectedBank, setSelectedBank] = useState(SAVED_BANKS[0]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newNumber, setNewNumber] = useState('');
+  const [amount, setAmount] = useState('5');
+  const [method, setMethod] = useState('card'); // 'card' | 'bank'
+  const [card, setCard] = useState(CARDS[0]);
+  const [cardMenu, setCardMenu] = useState(false);
 
-  const isCard = method === 'Credit Card';
-  const numeric = parseFloat(amount) || 0;
+  const value = parseFloat(amount);
+  const total = Number.isFinite(value) ? value : 0;
 
-  const onChangeAmount = (v) => {
-    // digits and a single dot, max 2 decimals
-    const clean = v.replace(/[^0-9.]/g, '');
-    const parts = clean.split('.');
-    const next = parts.length > 1 ? `${parts[0]}.${parts.slice(1).join('').slice(0, 2)}` : clean;
-    setAmount(next);
+  const handleAmount = (t) => {
+    // digits and one dot only
+    const clean = t.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+    setAmount(clean);
   };
 
-  const addMethod = () => {
-    const digits = newNumber.replace(/\D/g, '');
-    if (digits.length < (isCard ? 12 : 6)) {
-      Alert.alert('Invalid number', `Please enter a valid ${isCard ? 'card' : 'account'} number.`);
+  const handlePay = () => {
+    if (total <= 0) {
+      Alert.alert('Enter amount', 'Please enter an amount greater than $0.');
       return;
     }
-    const masked = `************${digits.slice(-4)}`;
-    if (isCard) {
-      setCards((p) => (p.includes(masked) ? p : [...p, masked]));
-      setSelectedCard(masked);
-    } else {
-      setBanks((p) => (p.includes(masked) ? p : [...p, masked]));
-      setSelectedBank(masked);
-    }
-    setNewNumber('');
-    setShowAdd(false);
-  };
-
-  const payNow = () => {
-    if (numeric <= 0) return Alert.alert('Enter amount', 'Please enter the amount you want to pay.');
-    if (numeric > lease.balance) {
-      return Alert.alert('Amount too high', `The amount cannot be more than the balance (${money(lease.balance)}).`);
-    }
-    // TODO: call payment API here
-    Alert.alert('Payment successful', `${money(numeric)} paid for ${lease.title}.`, [
+    Alert.alert('Payment successful', `${money(total)} paid for ${lease.title}.`, [
       { text: 'OK', onPress: () => navigation.goBack() },
     ]);
   };
@@ -99,109 +75,132 @@ const PaymentDetailsScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <ScreenHeader
-        title="Payments"
-        onBack={() => navigation.goBack()}
-        right={
-          <TouchableOpacity
-            onPress={() => navigation.navigate('PaymentHistoryScreen')}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Image source={ICONS.history} style={styles.historyIcon} resizeMode="contain" />
-          </TouchableOpacity>
-        }
-      />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <LeaseCard lease={lease} />
+          <View style={styles.backArrow} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Payments</Text>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => navigation.navigate('PaymentHistoryScreen')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          {ICONS.history ? (
+            <Image source={ICONS.history} style={styles.historyIcon} resizeMode="contain" />
+          ) : (
+            <Text style={styles.historyFallback}>↺</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
-          <Text style={styles.sectionLabel}>Pay Balance</Text>
-          <View style={styles.amountBox}>
-            <Text style={styles.dollar}>$</Text>
-            <TextInput
-              style={styles.amountInput}
-              value={amount}
-              onChangeText={onChangeAmount}
-              placeholder="0"
-              placeholderTextColor="#C4C4C4"
-              keyboardType="decimal-pad"
-            />
-          </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={() => setCardMenu(false)}
+      >
+        <LeaseCard lease={lease} />
 
-          {/* Credit Card / Bank Account toggle */}
-          <View style={styles.segment}>
-            {['Credit Card', 'Bank Account'].map((m) => (
+        <Text style={styles.sectionLabel}>Pay Balance</Text>
+        <View style={styles.amountBox}>
+          <Text style={styles.dollar}>$</Text>
+          <TextInput
+            value={amount}
+            onChangeText={handleAmount}
+            keyboardType="decimal-pad"
+            style={styles.amountInput}
+            placeholder="0"
+            placeholderTextColor="#B5B5B5"
+          />
+        </View>
+
+        {/* Credit Card / Bank Account */}
+        <View style={styles.toggle}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[styles.toggleItem, method === 'card' && styles.toggleActive]}
+            onPress={() => setMethod('card')}
+          >
+            <Text style={[styles.toggleText, method === 'card' && styles.toggleTextActive]}>
+              Credit Card
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[styles.toggleItem, method === 'bank' && styles.toggleActive]}
+            onPress={() => setMethod('bank')}
+          >
+            <Text style={[styles.toggleText, method === 'bank' && styles.toggleTextActive]}>
+              Bank Account
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Card selector */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.select}
+          onPress={() => setCardMenu((o) => !o)}
+        >
+          <Text style={styles.selectText}>{card}</Text>
+          <View style={styles.chevronDown} />
+        </TouchableOpacity>
+        {cardMenu && (
+          <View style={styles.selectMenu}>
+            {CARDS.map((c) => (
               <TouchableOpacity
-                key={m}
-                style={[styles.segmentItem, method === m && styles.segmentActive]}
-                activeOpacity={0.85}
-                onPress={() => setMethod(m)}
+                key={c}
+                style={styles.selectItem}
+                onPress={() => {
+                  setCard(c);
+                  setCardMenu(false);
+                }}
               >
-                <Text style={[styles.segmentText, method === m && styles.segmentTextActive]}>{m}</Text>
+                <Text style={[styles.selectText, c === card && { color: ORANGE }]}>{c}</Text>
               </TouchableOpacity>
             ))}
           </View>
+        )}
 
-          <SelectField
-            value={isCard ? selectedCard : selectedBank}
-            options={isCard ? cards : banks}
-            onSelect={isCard ? setSelectedCard : setSelectedBank}
-            placeholder="Select"
-          />
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={styles.addCard}
+          onPress={() => Alert.alert('Add card', 'Add card form will open here.')}
+        >
+          <Text style={styles.plus}>+</Text>
+          <Text style={styles.addCardText}>Credit Card</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setShowAdd(true)} style={styles.addBtn}>
-            <Text style={styles.addText}>+ {isCard ? 'Credit Card' : 'Bank Account'}</Text>
-          </TouchableOpacity>
+        {/* Totals */}
+        <View style={styles.totals}>
+          <Row label="Balance" value={money(total)} />
+          <Row label="Procession Fee" value="Waived" />
+          <View style={styles.divider} />
+          <Row label="Total Due" value={money(total)} />
+        </View>
 
-          <View style={styles.summary}>
-            <SummaryRow label="Balance" value={money(numeric)} />
-            <SummaryRow label="Procession Fee" value="Waived" />
-            <View style={styles.summaryDivider} />
-            <SummaryRow label="Total Due" value={money(numeric)} />
+        {/* Card logos */}
+        <View style={styles.logos}>
+          {ICONS.visa ? <Image source={ICONS.visa} style={styles.logo} resizeMode="contain" /> : null}
+          {ICONS.mastercard ? (
+            <Image source={ICONS.mastercard} style={styles.logo} resizeMode="contain" />
+          ) : null}
+          {/* AMEX is drawn in code, so it always shows (the PNG file was not visible) */}
+          <View style={styles.amexBox}>
+            <Text style={styles.amexText}>AMEX</Text>
           </View>
+        </View>
 
-          <View style={styles.logos}>
-            <Image source={ICONS.visa} style={styles.visa} resizeMode="contain" />
-            <Image source={ICONS.mastercard} style={styles.mastercard} resizeMode="contain" />
-            <AmexLogo />
-          </View>
-
-          <TouchableOpacity style={styles.payBtn} activeOpacity={0.85} onPress={payNow}>
-            <Text style={styles.payText}>Pay Now</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Add card / bank modal */}
-      <Modal visible={showAdd} transparent statusBarTranslucent animationType="fade" onRequestClose={() => setShowAdd(false)}>
-        <Pressable style={styles.overlay} onPress={() => setShowAdd(false)}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Add {isCard ? 'Credit Card' : 'Bank Account'}</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newNumber}
-              onChangeText={setNewNumber}
-              placeholder={isCard ? 'Card number' : 'Account number'}
-              placeholderTextColor="#C4C4C4"
-              keyboardType="number-pad"
-              maxLength={19}
-            />
-            <View style={styles.modalBtns}>
-              <TouchableOpacity style={[styles.modalBtn, styles.modalOutline]} onPress={() => setShowAdd(false)}>
-                <Text style={[styles.modalBtnText, { color: ORANGE }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, styles.modalFilled]} onPress={addMethod}>
-                <Text style={[styles.modalBtnText, { color: '#FFFFFF' }]}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <TouchableOpacity activeOpacity={0.85} style={styles.payButton} onPress={handlePay}>
+          <Text style={styles.payText}>Pay Now</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -210,84 +209,139 @@ export default PaymentDetailsScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  historyIcon: { width: 20, height: 20 },
 
-  sectionLabel: { fontFamily: FONT.medium, fontSize: 10, color: TEXT, marginTop: 4, marginBottom: 8 },
-  amountBox: {
+  header: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 24,
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    marginBottom: 14,
   },
-  dollar: { fontFamily: FONT.regular, fontSize: 18, color: '#B0B0B0', marginRight: 8 },
-  amountInput: { flex: 1, fontFamily: FONT.medium, fontSize: 20, color: '#000000', paddingVertical: 0 },
+  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: FONT.medium, fontSize: 14, color: TEXT },
+  backArrow: {
+    width: 10,
+    height: 10,
+    borderLeftWidth: 1.8,
+    borderBottomWidth: 1.8,
+    borderColor: TEXT,
+    transform: [{ rotate: '45deg' }],
+    marginLeft: 4,
+  },
+  historyIcon: { width: 20, height: 20 },
+  historyFallback: { fontSize: 20, color: TEXT },
 
-  segment: {
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 28 },
+
+  sectionLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    color: TEXT,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  amountBox: {
+    height: 46,
     flexDirection: 'row',
-    backgroundColor: '#FFEFEA',
-    borderRadius: 20,
-    padding: 3,
-    marginBottom: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 12,
   },
-  segmentItem: { flex: 1, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  segmentActive: { backgroundColor: ORANGE },
-  segmentText: { fontFamily: FONT.regular, fontSize: 8, color: '#FFA58C' },
-  segmentTextActive: { fontFamily: FONT.medium, color: '#FFFFFF' },
+  dollar: { fontFamily: FONT.regular, fontSize: 16, color: '#9A9A9A', marginRight: 6 },
+  amountInput: {
+    flex: 1,
+    fontFamily: FONT.medium,
+    fontSize: 18,
+    color: '#000000',
+    paddingVertical: 0,
+  },
 
-  addBtn: { alignSelf: 'flex-start', marginTop: 2, marginBottom: 16 },
-  addText: { fontFamily: FONT.regular, fontSize: 10, color: ORANGE },
+  toggle: {
+    flexDirection: 'row',
+    height: 34,
+    backgroundColor: '#FFF0EB',
+    borderRadius: 17,
+    padding: 3,
+    marginTop: 16,
+  },
+  toggleItem: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
+  toggleActive: { backgroundColor: ORANGE },
+  toggleText: { fontFamily: FONT.regular, fontSize: 8, color: '#F5A38C' },
+  toggleTextActive: { fontFamily: FONT.medium, color: '#FFFFFF' },
 
-  summary: { marginBottom: 14 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
-  summaryLabel: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
-  summaryValue: { fontFamily: FONT.medium, fontSize: 9, color: '#000000' },
-  summaryBold: { fontFamily: FONT.medium, fontSize: 10 },
-  summaryDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 4 },
+  select: {
+    height: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginTop: 14,
+  },
+  selectText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
+  chevronDown: {
+    width: 6,
+    height: 6,
+    borderRightWidth: 1.3,
+    borderBottomWidth: 1.3,
+    borderColor: TEXT,
+    transform: [{ rotate: '45deg' }],
+    marginBottom: 3,
+  },
+  selectMenu: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 10,
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+  },
+  selectItem: { paddingVertical: 10, paddingHorizontal: 12 },
 
-  logos: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 14 },
-  visa: { width: 28, height: 10, marginRight: 10 },
-  mastercard: { width: 24, height: 15, marginRight: 10 },
+  addCard: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
+  plus: { fontFamily: FONT.regular, fontSize: 14, color: ORANGE, marginRight: 4 },
+  addCardText: { fontFamily: FONT.regular, fontSize: 10, color: ORANGE },
+
+  totals: { marginTop: 22 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  rowLabel: { fontFamily: FONT.regular, fontSize: 10, color: TEXT },
+  rowValue: { fontFamily: FONT.medium, fontSize: 10, color: '#000000' },
+  rowBold: { fontFamily: FONT.medium },
+  divider: { height: 1, backgroundColor: BORDER, marginBottom: 12 },
+
+  logos: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  logo: { width: 26, height: 16, marginLeft: 10 },
   amexBox: {
     width: 26,
     height: 16,
+    marginLeft: 10,
     borderRadius: 2,
-    backgroundColor: '#2E77BB',
+    backgroundColor: '#1F72CD',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  amexText: { width: 20, height: 6 },
+  amexText: { fontFamily: FONT.semibold, fontSize: 6, color: '#FFFFFF', letterSpacing: 0.3 },
 
-  payBtn: {
+  payButton: {
     height: 44,
     borderRadius: 22,
     backgroundColor: ORANGE,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 16,
   },
-  payText: { fontFamily: FONT.medium, fontSize: 12, color: '#FFFFFF' },
-
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: 20 },
-  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 },
-  modalTitle: { fontFamily: FONT.semibold, fontSize: 14, color: TEXT, marginBottom: 12 },
-  modalInput: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT,
-    paddingVertical: 0,
-  },
-  modalBtns: { flexDirection: 'row', marginTop: 16 },
-  modalBtn: { flex: 1, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  modalOutline: { borderWidth: 1, borderColor: ORANGE, marginRight: 8 },
-  modalFilled: { backgroundColor: ORANGE, marginLeft: 8 },
-  modalBtnText: { fontFamily: FONT.medium, fontSize: 12 },
+  payText: { fontFamily: FONT.medium, fontSize: 11, color: '#FFFFFF' },
 });

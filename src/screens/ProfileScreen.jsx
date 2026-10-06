@@ -25,8 +25,8 @@ const FONT = {
 // `route` = screen name in AppNavigator. Screens that don't exist yet are skipped safely.
 const PROPERTY_MANAGEMENT = [
   { label: 'Properties', icon: ICONS.buildingOffice, route: 'Properties' },
-  { label: 'Listings', icon: ICONS.listBullets, route: 'PropertyListingScreen' },
-  { label: 'Favorites', icon: ICONS.heartLine, route: 'Favorites' },
+  { label: 'Listings', icon: ICONS.listBullets, route: 'Listings' },
+  { label: 'Favorites', icon: ICONS.heartLine, route: 'FavoritesScreen' },
   { label: 'Payments', icon: ICONS.money, route: 'PaymentsScreen' },
   { label: 'Offers', icon: ICONS.moneyWavy, route: 'Offers' },
   { label: 'Leases', icon: ICONS.lease, route: 'Leases' },

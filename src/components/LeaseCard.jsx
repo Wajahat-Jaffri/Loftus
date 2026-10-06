@@ -4,7 +4,6 @@ import { ICONS, IMAGES } from '../assets';
 
 const ORANGE = '#FF6C40';
 const TEXT = '#1C1C1C';
-const GREY = '#8A8A8A';
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
@@ -20,13 +19,11 @@ export const StatusBadge = ({ status }) => {
   );
 };
 
+// Two overlapping photos only (Figma has no "+1" bubble).
 const Tenants = () => (
   <View style={styles.tenantsRow}>
     <Image source={IMAGES.tenant1} style={styles.avatar} />
     <Image source={IMAGES.tenant2} style={[styles.avatar, styles.avatarOverlap]} />
-    <View style={[styles.avatar, styles.avatarOverlap, styles.avatarMore]}>
-      <Text style={styles.avatarMoreText}>+1</Text>
-    </View>
   </View>
 );
 
@@ -91,6 +88,4 @@ const styles = StyleSheet.create({
   tenantsRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: '#FFFFFF' },
   avatarOverlap: { marginLeft: -8 },
-  avatarMore: { backgroundColor: '#E5E5E5', alignItems: 'center', justifyContent: 'center' },
-  avatarMoreText: { fontFamily: FONT.medium, fontSize: 6, color: GREY },
 });

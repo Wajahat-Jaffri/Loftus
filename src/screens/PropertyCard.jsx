@@ -38,7 +38,6 @@ const Feature = ({ icon, label }) => (
  * - Swipe left/right to change slide (paged).
  * - Auto-advances every AUTO_SLIDE_MS and loops back to the first slide.
  * - Auto-slide pauses while the user is dragging and restarts after.
- * - Heart adds/removes the property from the shared Favorites list.
  */
 const PropertyCard = ({
   items = [],
@@ -52,7 +51,8 @@ const PropertyCard = ({
   const [activeIndex, setActiveIndex] = useState(0);
   // Bumped after a manual swipe so the auto-slide timer restarts from zero.
   const [timerKey, setTimerKey] = useState(0);
-  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  // Favorites are shared by the whole app (see FavoritesContext).
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const goTo = useCallback((index, animated = true) => {
     indexRef.current = index;
@@ -90,14 +90,15 @@ const PropertyCard = ({
     setTimerKey((k) => k + 1);
   };
 
-  const handleFavorite = (item) => {
+  const handleHeartPress = (item) => {
+    // The context stores the whole property so the Favorites screen can show it.
     toggleFavorite(item);
-    onToggleFavorite?.(item.id);
+    onToggleFavorite?.(item);
   };
 
   const renderSlide = ({ item }) => {
     const image = item.images?.[0];
-    const favorite = isFavorite(item.id);
+    const liked = isFavorite(item.id);
 
     return (
       <View style={styles.slide}>
@@ -112,14 +113,13 @@ const PropertyCard = ({
           <TouchableOpacity
             style={styles.favoriteButton}
             activeOpacity={0.8}
-            onPress={() => handleFavorite(item)}
+            onPress={() => handleHeartPress(item)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            {favorite ? (
-              <Image source={ICONS.heartFilled} style={styles.favoriteFilled} resizeMode="contain" />
-            ) : (
-              <Image source={ICONS.heart} style={styles.favoriteIcon} />
-            )}
+            <Image
+              source={liked && ICONS.heartFilled ? ICONS.heartFilled : ICONS.heart}
+              style={[styles.favoriteIcon, liked && { tintColor: '#FF6C40' }]}
+            />
           </TouchableOpacity>
         </View>
 
@@ -166,7 +166,6 @@ const PropertyCard = ({
       <FlatList
         ref={listRef}
         data={items}
-        extraData={favorites}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderSlide}
         horizontal
@@ -216,12 +215,24 @@ const styles = StyleSheet.create({
     borderColor: '#EDEDED',
     marginBottom: 18,
     overflow: 'hidden',
-    
   },
-  list: { width: SLIDE_WIDTH, flexGrow: 0 },
-  slide: { width: SLIDE_WIDTH, backgroundColor: '#FFFFFF' },
-  imageWrapper: { height: IMAGE_HEIGHT, width: SLIDE_WIDTH },
-  propertyImage: { width: SLIDE_WIDTH, height: IMAGE_HEIGHT, resizeMode: 'cover' },
+  list: {
+    width: SLIDE_WIDTH,
+    flexGrow: 0,
+  },
+  slide: {
+    width: SLIDE_WIDTH,
+    backgroundColor: '#FFFFFF',
+  },
+  imageWrapper: {
+    height: IMAGE_HEIGHT,
+    width: SLIDE_WIDTH,
+  },
+  propertyImage: {
+    width: SLIDE_WIDTH,
+    height: IMAGE_HEIGHT,
+    resizeMode: 'cover',
+  },
   offersBadge: {
     position: 'absolute',
     top: 12,
@@ -231,7 +242,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 14,
   },
-  offersBadgeText: { fontFamily: FONT.medium, fontSize: 11, color: '#1A1A1A' },
+  offersBadgeText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    color: '#1A1A1A',
+  },
   favoriteButton: {
     position: 'absolute',
     top: 10,
@@ -241,8 +256,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  favoriteIcon: { width: 24, height: 24, tintColor: '#FFFFFF', resizeMode: 'contain' },
-  favoriteFilled: { width: 24, height: 24 },
+  favoriteIcon: {
+    width: 24,
+    height: 24,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
   paginationContainer: {
     position: 'absolute',
     // sits on the bottom edge of the image, fixed while slides move
@@ -251,22 +270,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  paginationDot: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 2.5 },
-  activeDot: { backgroundColor: '#FF6C40' },
-  inactiveDot: { backgroundColor: '#FFFFFF' },
-  cardDetails: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 },
-  propertyTitle: { fontFamily: FONT.semibold, fontSize: 15, color: '#000000', marginBottom: 6 },
-  featuresRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  featureItem: { flexDirection: 'row', alignItems: 'center' },
-  featureIcon: { width: 13, height: 13, tintColor: '#8A8A8A', marginRight: 4 },
-  featureText: { fontFamily: FONT.regular, fontSize: 10, color: '#6B6B6B' },
-  divider: { width: 1, height: 11, backgroundColor: '#D1D1D1', marginHorizontal: 8 },
-  addressText: { fontFamily: FONT.regular, fontSize: 10, color: '#6B6B6B', marginBottom: 8 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  priceText: { fontFamily: FONT.semibold, fontSize: 20, color: '#FF6C40' },
-  timeAgoContainer: { flexDirection: 'row', alignItems: 'center' },
-  clockIcon: { width: 12, height: 12, tintColor: '#FF6C40', marginRight: 4 },
-  timeAgoText: { fontFamily: FONT.regular, fontSize: 10, color: '#8A8A8A' },
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 2.5,
+  },
+  activeDot: {
+    backgroundColor: '#FF6C40',
+  },
+  inactiveDot: {
+    backgroundColor: '#FFFFFF',
+  },
+  cardDetails: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+  propertyTitle: {
+    fontFamily: FONT.semibold,
+    fontSize: 15,
+    color: '#000000',
+    marginBottom: 6,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featureIcon: {
+    width: 13,
+    height: 13,
+    tintColor: '#8A8A8A',
+    marginRight: 4,
+  },
+  featureText: {
+    fontFamily: FONT.regular,
+    fontSize: 10,
+    color: '#6B6B6B',
+  },
+  divider: {
+    width: 1,
+    height: 11,
+    backgroundColor: '#D1D1D1',
+    marginHorizontal: 8,
+  },
+  addressText: {
+    fontFamily: FONT.regular,
+    fontSize: 10,
+    color: '#6B6B6B',
+    marginBottom: 8,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceText: {
+    fontFamily: FONT.semibold,
+    fontSize: 20,
+    color: '#FF6C40',
+  },
+  timeAgoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clockIcon: {
+    width: 12,
+    height: 12,
+    tintColor: '#FF6C40',
+    marginRight: 4,
+  },
+  timeAgoText: {
+    fontFamily: FONT.regular,
+    fontSize: 10,
+    color: '#8A8A8A',
+  },
 });
 
 export default PropertyCard;

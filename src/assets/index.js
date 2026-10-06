@@ -12,6 +12,14 @@ export const IMAGES = {
   // Payments section
   tenant1: require('./images/tenant1.png'),
   tenant2: require('./images/tenant2.png'),
+
+  // Offers section
+  avatarPiro: require('./images/avatar_piro.png'),
+  avatarGeorge: require('./images/avatar_george.png'),
+  avatarAbida: require('./images/avatar_abida.png'),
+  avatarGeroge: require('./images/avatar_geroge.png'),
+  avatarTenant1: require('./images/avatar_tenant1.png'),
+  avatarTenant2: require('./images/avatar_tenant2.png'),
 };
 
 export const ICONS = {
@@ -61,4 +69,13 @@ export const ICONS = {
   mastercard: require('./icons/logos_mastercard.png'),
   visa: require('./icons/logos_visa.png'),
   mapPin: require('./icons/MapPin.png'),
+
+  // Listing section
+  currencyDollar: require('./icons/CurrencyDollar.png'),
+
+  // Offers section
+  chatText: require('./icons/ChatText.png'),
+  handcuffs: require('./icons/fi_15888326.png'),
+  creditCheck: require('./icons/fi_3133400.png'),
+  gavel: require('./icons/fi_783196.png'),
 };

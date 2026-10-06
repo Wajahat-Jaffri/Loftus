@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { ICONS } from '../assets';
 
@@ -12,8 +12,8 @@ const FONT = {
 
 /**
  * Tabs of the bottom bar.
- * `route` = screen name in AppNavigator. Leave it null until that screen exists;
- * the tab will still turn orange when tapped, it just won't navigate anywhere.
+ * `route` = the screen name in AppNavigator.
+ * Home has no screen yet, so it stays null (tapping it does nothing).
  */
 const TABS = [
   { key: 'Home', label: 'Home', icon: ICONS.home, fallback: '⌂', route: null },
@@ -41,18 +41,22 @@ const NavItem = ({ tab, isActive, onPress }) => (
   </TouchableOpacity>
 );
 
+/**
+ * Shared bottom tab bar.
+ *
+ * Props:
+ *  - active: the tab that belongs to the screen showing this bar
+ *            ('Home' | 'Favorites' | 'Explore' | 'Profile'). That tab is orange.
+ *  - navigation: React Navigation object.
+ *
+ * Every screen with this bar passes its own `active`, so the orange tab
+ * always matches the screen you are on.
+ */
 const BottomNav = ({ active = 'Explore', navigation }) => {
-  const [selected, setSelected] = useState(active);
-
-  useEffect(() => {
-    setSelected(active);
-  }, [active]);
-
   const handlePress = (tab) => {
-    setSelected(tab.key);
-    if (tab.route && tab.key !== active) {
-      navigation?.navigate(tab.route);
-    }
+    // Already on this tab, or the tab has no screen yet.
+    if (tab.key === active || !tab.route) return;
+    navigation?.navigate(tab.route);
   };
 
   return (
@@ -61,7 +65,7 @@ const BottomNav = ({ active = 'Explore', navigation }) => {
         <NavItem
           key={tab.key}
           tab={tab}
-          isActive={selected === tab.key}
+          isActive={tab.key === active}
           onPress={() => handlePress(tab)}
         />
       ))}
@@ -79,11 +83,32 @@ const styles = StyleSheet.create({
     borderTopColor: '#EFEFEF',
     backgroundColor: '#FFFFFF',
   },
-  navItem: { alignItems: 'center', justifyContent: 'center', minWidth: 60 },
-  icon: { width: 22, height: 22, marginBottom: 3 },
-  fallbackIcon: { fontSize: 20, lineHeight: 24, color: GREY, marginBottom: 1 },
-  labelInactive: { fontFamily: FONT.regular, fontSize: 9, color: GREY },
-  labelActive: { fontFamily: FONT.medium, fontSize: 9, color: ORANGE },
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+  icon: {
+    width: 22,
+    height: 22,
+    marginBottom: 3,
+  },
+  fallbackIcon: {
+    fontSize: 20,
+    lineHeight: 24,
+    color: GREY,
+    marginBottom: 1,
+  },
+  labelInactive: {
+    fontFamily: FONT.regular,
+    fontSize: 9,
+    color: GREY,
+  },
+  labelActive: {
+    fontFamily: FONT.medium,
+    fontSize: 9,
+    color: ORANGE,
+  },
 });
 
 export default BottomNav;
