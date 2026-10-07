@@ -6,7 +6,6 @@ import { ICONS } from '../assets';
 import { PAYMENT_HISTORY } from '../constants/paymentsData';
 
 const ORANGE = '#FF6C40';
-const TEXT = '#1C1C1C';
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
@@ -18,7 +17,7 @@ const HistoryRow = ({ item }) => {
     return (
       <View style={[styles.card, styles.simpleCard]}>
         <Text style={styles.simpleLabel}>{item.label}</Text>
-        <Text style={styles.simpleAmount}>{item.amount}</Text>
+        <Text style={styles.amount}>{item.amount}</Text>
       </View>
     );
   }
@@ -28,10 +27,10 @@ const HistoryRow = ({ item }) => {
       <View style={[styles.card, styles.paidCard]}>
         <View>
           <Text style={styles.paidLabel}>Paid by:</Text>
-          <Text style={styles.paidLabel}>{item.payer}</Text>
+          <Text style={styles.payer}>{item.payer}</Text>
         </View>
         <View style={styles.alignEnd}>
-          <Text style={styles.paidAmount}>{item.amount}</Text>
+          <Text style={styles.amount}>{item.amount}</Text>
           <View style={styles.feeRow}>
             <Text style={styles.feeText}>{item.fee}</Text>
             <Image source={ICONS.info} style={styles.infoGrey} resizeMode="contain" />
@@ -44,13 +43,15 @@ const HistoryRow = ({ item }) => {
   // adjusted
   return (
     <View style={[styles.card, styles.adjustedCard]}>
-      <Text style={styles.adjustedLabel}>Paid by: {item.payer}</Text>
-      <View style={styles.adjustedRight}>
-        <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>{item.discount}</Text>
-          <Image source={ICONS.info} style={styles.infoRed} resizeMode="contain" />
+      <View style={styles.adjustedTop}>
+        <Text style={styles.adjustedLabel}>{`Paid by:\n${item.payer}`}</Text>
+        <View style={styles.adjustedRight}>
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountText}>{item.discount}</Text>
+            <Image source={ICONS.info} style={styles.infoRed} resizeMode="contain" />
+          </View>
+          <Text style={styles.adjustedAmount}>{item.amount}</Text>
         </View>
-        <Text style={styles.adjustedAmount}>{item.amount}</Text>
       </View>
     </View>
   );
@@ -61,8 +62,10 @@ const PaymentHistoryScreen = ({ navigation }) => (
     <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
     <ScreenHeader title="Payment History" onBack={() => navigation.goBack()} />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {PAYMENT_HISTORY.map((item) => (
-        <HistoryRow key={item.id} item={item} />
+      {PAYMENT_HISTORY.map((item, i) => (
+        <View key={item.id} style={i > 0 ? styles.gap : null}>
+          <HistoryRow item={item} />
+        </View>
       ))}
     </ScrollView>
   </SafeAreaView>
@@ -72,46 +75,103 @@ export default PaymentHistoryScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
+  content: { paddingHorizontal: 15, paddingTop: 20, paddingBottom: 24 },
+  gap: { marginTop: 16 },
 
   card: {
+    alignSelf: 'stretch',
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderColor: '#E7E7E7',
+    borderRadius: 15,
+    paddingHorizontal: 15,
     backgroundColor: '#FFFFFF',
-  },
-  alignEnd: { alignItems: 'flex-end' },
-
-  simpleCard: { height: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  simpleLabel: { fontFamily: FONT.regular, fontSize: 10, color: TEXT },
-  simpleAmount: { fontFamily: FONT.medium, fontSize: 10, color: '#000000' },
-
-  paidCard: { paddingVertical: 10, flexDirection: 'row', justifyContent: 'space-between' },
-  paidLabel: { fontFamily: FONT.regular, fontSize: 10, color: TEXT, lineHeight: 15 },
-  paidAmount: { fontFamily: FONT.medium, fontSize: 10, color: '#000000' },
-  feeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  feeText: { fontFamily: FONT.regular, fontSize: 7, color: '#6B6B6B' },
-  infoGrey: { width: 7, height: 7, marginLeft: 3, tintColor: '#6B6B6B' },
-
-  adjustedCard: {
-    minHeight: 64,
-    paddingVertical: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  adjustedLabel: { width: 90, fontFamily: FONT.medium, fontSize: 10, color: '#000000', lineHeight: 15 },
-  adjustedRight: { flexDirection: 'row', alignItems: 'flex-start' },
-  adjustedAmount: { fontFamily: FONT.semibold, fontSize: 10, color: ORANGE, marginLeft: 8, marginTop: 1 },
+  alignEnd: { alignItems: 'flex-end' },
+
+  simpleCard: { height: 58, alignItems: 'center' },
+  simpleLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  amount: {
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+
+  paidCard: { height: 70, paddingVertical: 10 },
+  paidLabel: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#404040',
+    includeFontPadding: false,
+  },
+  payer: {
+    marginTop: 2,
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  feeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  feeText: {
+    fontFamily: FONT.medium,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#404040',
+    includeFontPadding: false,
+  },
+  infoGrey: { width: 14, height: 14, marginLeft: 3, tintColor: '#404040' },
+
+  adjustedCard: { height: 102, paddingTop: 15 },
+  adjustedTop: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  adjustedLabel: {
+    width: 167,
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  adjustedRight: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  adjustedAmount: {
+    marginLeft: 6,
+    fontFamily: FONT.semibold,
+    fontSize: 16,
+    lineHeight: 24,
+    color: ORANGE,
+    includeFontPadding: false,
+  },
   discountBadge: {
+    minWidth: 66,
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    backgroundColor: '#FFDDDD',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FDE3E3',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    justifyContent: 'center',
   },
-  discountText: { fontFamily: FONT.medium, fontSize: 7, color: '#E04848' },
-  infoRed: { width: 7, height: 7, marginLeft: 3, tintColor: '#E04848' },
+  discountText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#AA0303',
+    includeFontPadding: false,
+  },
+  infoRed: { width: 12, height: 12, marginLeft: 3, tintColor: '#AA0303' },
 });
