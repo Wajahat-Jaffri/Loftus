@@ -12,7 +12,7 @@ export const AvatarStack = ({ images = [], size = 18 }) => (
         style={[
           styles.stackAvatar,
           { width: size, height: size, borderRadius: size / 2 },
-          i > 0 && { marginLeft: -size / 3 },
+          i > 0 && { marginLeft: -size / 4 },
         ]}
       />
     ))}
@@ -66,7 +66,7 @@ const OfferCard = ({ item, onPress }) => {
           <Field label={f2.label} value={f2.value} />
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Tenant(s)</Text>
-            <AvatarStack images={item.tenants} />
+            <AvatarStack images={item.tenants} size={30} />
           </View>
         </View>
       </View>
@@ -77,29 +77,31 @@ const OfferCard = ({ item, onPress }) => {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: '#EDEDED',
-    borderRadius: 8,
+    borderColor: '#E9E9E9',
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    padding: 10,
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
+    marginBottom: 16,
   },
   topRow: { flexDirection: 'row', alignItems: 'center' },
-  thumb: { width: 40, height: 40, borderRadius: 4, marginRight: 10 },
+  thumb: { width: 56, height: 56, borderRadius: 4, marginRight: 16 },
   topInfo: { flex: 1 },
-  title: { fontFamily: FONT.semi, fontSize: 11, color: '#000000' },
-  addressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  pin: { width: 8, height: 8, tintColor: '#6B6B6B', marginRight: 3 },
-  address: { flex: 1, fontFamily: FONT.regular, fontSize: 8, color: '#6B6B6B' },
-  badgesRow: { flexDirection: 'row', marginTop: 4 },
-  badge: { paddingHorizontal: 8, paddingVertical: 1.5, borderRadius: 8, marginRight: 6 },
-  badgeText: { fontFamily: FONT.medium, fontSize: 7, color: '#FFFFFF' },
+  title: { fontFamily: FONT.semi, fontSize: 17, color: '#000000' },
+  addressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 1 },
+  pin: { width: 11, height: 11, tintColor: '#6B6B6B', marginRight: 4 },
+  address: { flex: 1, fontFamily: FONT.regular, fontSize: 11.5, color: '#6B6B6B' },
+  badgesRow: { flexDirection: 'row', marginTop: 5 },
+  badge: { paddingHorizontal: 12, height: 19, justifyContent: 'center', borderRadius: 10, marginRight: 7 },
+  badgeText: { fontFamily: FONT.medium, fontSize: 10.5, color: '#FFFFFF' },
 
-  grid: { flexDirection: 'row', marginTop: 10 },
+  grid: { flexDirection: 'row', marginTop: 22 },
   col: { flex: 1 },
-  field: { marginBottom: 8, minHeight: 24 },
-  fieldLabel: { fontFamily: FONT.regular, fontSize: 7.5, color: COLORS.grey, marginBottom: 2 },
-  fieldValue: { fontFamily: FONT.medium, fontSize: 10, color: COLORS.text },
-  fieldValueHighlight: { fontFamily: FONT.semi, fontSize: 12, color: COLORS.orange },
+  field: { marginBottom: 12, minHeight: 36 },
+  fieldLabel: { fontFamily: FONT.regular, fontSize: 10.5, color: COLORS.grey, marginBottom: 2 },
+  fieldValue: { fontFamily: FONT.regular, fontSize: 15, color: '#4A4A4A' },
+  fieldValueHighlight: { fontFamily: FONT.semi, fontSize: 18, color: COLORS.orange },
 
   stack: { flexDirection: 'row', alignItems: 'center' },
   stackAvatar: { borderWidth: 1.5, borderColor: '#FFFFFF' },

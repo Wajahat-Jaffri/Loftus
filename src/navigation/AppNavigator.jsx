@@ -40,7 +40,7 @@ const AppNavigator = () => {
     <FavoritesProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="PropertyListingScreen"
+          initialRouteName="SplashScreen"
           screenOptions={{ headerShown: false }}
         >
           <Stack.Screen name="SplashScreen" component={SplashScreen} />

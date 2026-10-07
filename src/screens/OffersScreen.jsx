@@ -72,9 +72,9 @@ const OffersScreen = ({ navigation }) => {
             onPress={() => setFilterOpen(true)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <View style={[styles.filterLine, { width: 18 }]} />
-            <View style={[styles.filterLine, { width: 13 }]} />
-            <View style={[styles.filterLine, { width: 8 }]} />
+            <View style={[styles.filterLine, { width: 30 }]} />
+            <View style={[styles.filterLine, { width: 21 }]} />
+            <View style={[styles.filterLine, { width: 12 }]} />
             {filterActive && <View style={styles.filterDot} />}
           </TouchableOpacity>
         </View>
@@ -127,14 +127,14 @@ const OffersScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   header: {
-    height: 48,
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 14, color: COLORS.text },
+  headerBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: FONT.medium, fontSize: 19, color: COLORS.text },
 
   tabsRow: {
     flexDirection: 'row',
@@ -145,42 +145,45 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   tabsLeft: { flexDirection: 'row' },
-  tab: { marginRight: 18, paddingTop: 6 },
-  tabText: { fontFamily: FONT.regular, fontSize: 10, color: COLORS.grey, paddingBottom: 8 },
+  tab: { paddingHorizontal: 16, paddingTop: 12 },
+  tabText: { fontFamily: FONT.regular, fontSize: 14, color: COLORS.text, paddingBottom: 14 },
   tabTextActive: { fontFamily: FONT.medium, color: COLORS.orange },
   tabLine: { height: 2, backgroundColor: 'transparent' },
   tabLineActive: { backgroundColor: COLORS.orange },
-  tabsRight: { flexDirection: 'row', alignItems: 'center', paddingBottom: 6 },
+  tabsRight: { flexDirection: 'row', alignItems: 'center', paddingBottom: 10 },
   filterBtn: {
-    width: 24,
-    height: 24,
-    marginLeft: 10,
-    alignItems: 'center',
+    width: 32,
+    height: 32,
+    marginLeft: 16,
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  filterLine: { height: 2, borderRadius: 1, backgroundColor: COLORS.orange, marginVertical: 1.5 },
+  filterLine: { height: 3, borderRadius: 2, backgroundColor: COLORS.orange, marginVertical: 2.5 },
   filterDot: {
     position: 'absolute',
-    top: 1,
-    right: 0,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: 0,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: COLORS.red,
   },
 
-  pillsWrap: { paddingHorizontal: 16, paddingVertical: 12 },
+  pillsWrap: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
   pill: {
-    paddingHorizontal: 14,
-    paddingVertical: 3,
-    borderRadius: 14,
+    height: 32,
+    minWidth: 56,
+    paddingHorizontal: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.orange,
-    marginRight: 8,
+    marginRight: 10,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pillOn: { backgroundColor: COLORS.orange },
-  pillText: { fontFamily: FONT.regular, fontSize: 9, color: COLORS.orange },
+  pillText: { fontFamily: FONT.medium, fontSize: 13, color: COLORS.orange },
   pillTextOn: { color: '#FFFFFF' },
 
   list: { flex: 1 },

@@ -5,7 +5,7 @@ import { IMAGES } from '../assets';
 const SplashScreen = ({ navigation }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace('Welcome');
+      navigation.replace('WelcomeScreen');
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -13,14 +13,9 @@ const SplashScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#ff6c40" barStyle="light-content" />
-      <View style={styles.logoContainer}>
-        <Image
-          source={IMAGES.logo}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+      <StatusBar backgroundColor="#FF6C40" barStyle="light-content" />
+      {/* Figma: logo 50 x 97, centered */}
+      <Image source={IMAGES.logo} style={styles.logo} resizeMode="contain" />
     </View>
   );
 };
@@ -28,19 +23,13 @@ const SplashScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ff6c40',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoContainer: {
-    width: 120,
-    height: 120,
+    backgroundColor: '#FF6C40',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: '100%',
-    height: '100%',
+    width: 50,
+    height: 97,
     tintColor: '#FFFFFF',
   },
 });

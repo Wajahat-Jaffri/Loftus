@@ -1,45 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { AuthScreen, Title, Subtitle, PrimaryButton, C, F } from '../components/AuthControls';
 
 const VerificationScreen = ({ navigation }) => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(0); // 0 hone par "Resend Code" button dikhega
+  const [timer, setTimer] = useState(0); // 0 => "Resend Code"
   const [isTimerActive, setIsTimerActive] = useState(false);
   const inputRefs = useRef([]);
 
-  // Timer logic
   useEffect(() => {
     let interval = null;
     if (isTimerActive && timer > 0) {
-      interval = setInterval(() => {
-        setTimer(prevTimer => prevTimer - 1);
-      }, 1000);
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
     } else if (timer === 0) {
       setIsTimerActive(false);
-      clearInterval(interval);
     }
     return () => clearInterval(interval);
   }, [isTimerActive, timer]);
 
-  // Seconds ko mm:ss format mein convert karne ka helper
-  const formatTime = seconds => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    const formattedMins = mins < 10 ? `0${mins}` : mins;
-    const formattedSecs = secs < 10 ? `0${secs}` : secs;
-    return `${formattedMins}:${formattedSecs}`;
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m < 10 ? `0${m}` : m}:${s < 10 ? `0${s}` : s}`;
   };
 
   const handleResendCode = () => {
@@ -48,13 +30,10 @@ const VerificationScreen = ({ navigation }) => {
   };
 
   const handleCodeChange = (text, index) => {
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
-
-    if (text && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    const next = [...code];
+    next[index] = text;
+    setCode(next);
+    if (text && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
   const handleKeyPress = (e, index) => {
@@ -64,182 +43,99 @@ const VerificationScreen = ({ navigation }) => {
   };
 
   const handleVerify = () => {
-    const otp = code.join('');
-    console.log('Entered OTP:', otp);
+    console.log('Entered OTP:', code.join(''));
+    // TODO: verify OTP with API
+    navigation.replace('PropertyListingScreen');
   };
 
+  const timerOn = isTimerActive && timer > 0;
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.container}
-        >
-          <View style={styles.content}>
-            {/* Header Text */}
-            <View style={styles.headerContainer}>
-              <Text style={styles.title}>
-                A verification has been sent{'\n'}to your phone number..
-              </Text>
-              <Text style={styles.subtitle}>
-                Please enter the code below to verify your{'\n'}phone number
-              </Text>
-            </View>
+    <AuthScreen top={30}>
+      {/* Figma y 74 */}
+      <Title>{'A verification has been sent to your phone number..'}</Title>
 
-            {/* OTP Input Boxes */}
-            <View style={styles.otpContainer}>
-              {code.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={ref => (inputRefs.current[index] = ref)}
-                  style={[styles.otpBox, digit !== '' && styles.otpBoxActive]}
-                  value={digit}
-                  onChangeText={text => handleCodeChange(text, index)}
-                  onKeyPress={e => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectTextOnFocus
-                />
-              ))}
-            </View>
+      {/* y 138 */}
+      <Subtitle style={styles.subtitle}>
+        Please enter the code below to verify your phone number
+      </Subtitle>
 
-            {/* Dynamic Resend Code / Timer State */}
-            <View style={styles.timerContainer}>
-              {isTimerActive && timer > 0 ? (
-                <Text style={styles.timerText}>
-                  Resent Code In:{' '}
-                  <Text style={styles.timerHighlight}>{formatTime(timer)}</Text>
-                </Text>
-              ) : (
-                <TouchableOpacity
-                  onPress={handleResendCode}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.resendText}>Resend Code</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+      {/* y 212 : 6 boxes 51x51, radius 8 */}
+      <View style={styles.otpRow}>
+        {code.map((digit, index) => (
+          <TextInput
+            key={index}
+            ref={(ref) => (inputRefs.current[index] = ref)}
+            style={[styles.box, digit !== '' && styles.boxActive]}
+            value={digit}
+            onChangeText={(t) => handleCodeChange(t, index)}
+            onKeyPress={(e) => handleKeyPress(e, index)}
+            keyboardType="number-pad"
+            maxLength={1}
+            selectTextOnFocus
+            underlineColorAndroid="transparent"
+          />
+        ))}
+      </View>
 
-            {/* Verify Button */}
-            <TouchableOpacity
-              style={styles.verifyButton}
-              activeOpacity={0.8}
-              onPress={handleVerify}
-            >
-              <Text style={styles.verifyButtonText}>Verify</Text>
-            </TouchableOpacity>
+      {/* y 288 */}
+      <View style={styles.timerWrap}>
+        {timerOn ? (
+          <Text style={styles.timerText}>
+            {'Resent Code In: '}
+            <Text style={styles.timerHighlight}>{formatTime(timer)}</Text>
+          </Text>
+        ) : (
+          <TouchableOpacity onPress={handleResendCode} activeOpacity={0.7}>
+            <Text style={styles.resend}>Resend Code</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-            {/* Change Phone Number Link */}
-            <TouchableOpacity
-              style={styles.changePhoneContainer}
-              activeOpacity={0.7}
-              onPress={() => navigation?.navigate('ChangePhoneNumber')}
-            >
-              <Text style={styles.changePhoneText}>Change Phone Number</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+      {/* y 396 (Figma button starts at x=10) */}
+      <PrimaryButton label="Verify" style={styles.verify} onPress={handleVerify} />
+
+      {/* y 476 */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        style={[styles.change, !timerOn && { paddingLeft: 8 }]}
+        onPress={() => navigation.navigate('ChangePhoneNumberScreen')}
+      >
+        <Text style={styles.changeText}>Change Phone Number</Text>
+      </TouchableOpacity>
+    </AuthScreen>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  headerContainer: {
-    marginTop: 70,
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    lineHeight: 28,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#7C7C7C',
-    lineHeight: 18,
-  },
-  otpContainer: {
+  subtitle: { marginTop: 10, width: 304, color: C.body2 },
+  otpRow: {
+    marginTop: 32,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-    marginTop: 8,
   },
-  otpBox: {
-    width: 46,
-    height: 50,
+  box: {
+    width: 51,
+    height: 51,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: 14,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    borderColor: '#E5EFF2',
     backgroundColor: '#FFFFFF',
+    padding: 0,
+    textAlign: 'center',
+    fontFamily: F.medium,
+    fontSize: 18,
+    color: '#515151',
+    includeFontPadding: false,
   },
-  otpBoxActive: {
-    borderColor: '#FF6C40',
-  },
-  timerContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  timerText: {
-    fontSize: 13,
-    color: '#7C7C7C',
-  },
-  timerHighlight: {
-    color: '#FF6C40',
-    fontWeight: '600',
-  },
-  resendText: {
-    color: '#FF6C40',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  verifyButton: {
-    backgroundColor: '#FF6C40',
-    height: 54,
-    borderRadius: 27,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#FF6C40',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    marginTop:60,
-  },
-  verifyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  changePhoneContainer: {
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  changePhoneText: {
-    color: '#FF6C40',
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  boxActive: { borderColor: C.primary },
+  timerWrap: { marginTop: 25, height: 21, alignItems: 'center', justifyContent: 'center' },
+  timerText: { fontFamily: F.regular, fontSize: 14, lineHeight: 21, color: C.body2 },
+  timerHighlight: { fontFamily: F.medium, color: C.primary },
+  resend: { fontFamily: F.medium, fontSize: 14, lineHeight: 21, color: C.primary },
+  verify: { marginTop: 87, marginLeft: -5, marginRight: 5 },
+  change: { marginTop: 24, alignItems: 'center', height: 21, justifyContent: 'center' },
+  changeText: { fontFamily: F.regular, fontSize: 14, lineHeight: 21, color: '#E37553' },
 });
 
 export default VerificationScreen;
