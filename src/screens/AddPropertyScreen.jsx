@@ -1,412 +1,475 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   Image,
-  TextInput,
+  Modal,
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  StyleSheet,
-  Alert,
-  Modal,
   BackHandler,
+  Alert,
+  StyleSheet,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { IMAGES } from '../assets';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '../components/ScreenHeader';
 import {
-  Field,
-  SelectField,
-  CheckGrid,
-  PrimaryButton,
-  ImageGlyph,
   ORANGE,
-  TEXT,
   FONT,
-} from '../components/PropertyFormControls';
+  AP_ICONS,
+  MapCard,
+  Stack,
+  Stepper,
+  Group,
+  TextBox,
+  TextArea,
+  SelectBox,
+  CheckColumns,
+  PrimaryButton,
+  SectionTitle,
+  DefaultImageBox,
+  MediaRow,
+  CustomMediaRow,
+  AddLink,
+} from '../components/AddPropertyParts';
 
+/* ---------------- options (edit freely) ---------------- */
 const STEPS = ['Location', 'Description', 'Features', 'Media'];
 
 const STATES = [
-  'Alabama', 'Arizona', 'California', 'Colorado', 'Florida', 'Georgia', 'Illinois', 'Maine',
-  'Massachusetts', 'Michigan', 'New Jersey', 'New York', 'North Carolina', 'Ohio', 'Pennsylvania',
-  'Texas', 'Virginia', 'Washington',
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming',
 ];
-const PROPERTY_TYPES = ['Single Family', 'Townhouse', 'Condo', 'Apartment', 'Duplex', 'Other'];
-const HOUSE_STYLES = ['Ranch', 'Colonial', 'Modern', 'Victorian', 'Craftsman', 'Cottage'];
-const AMENITIES = [
-  'Fitness Center', 'Business Center', 'ClubHouse', 'Gameroom', 'Play Ground', 'Pool',
-  'Dog Park', 'Package Service', 'Concierge', 'Elevator',
+const PROPERTY_TYPES = ['House', 'Apartment', 'Townhouse', 'Condo', 'Duplex', 'Land'];
+const HOUSE_STYLES = ['Ranch', 'Colonial', 'Victorian', 'Modern', 'Cape Cod'];
+const YES_NO = ['Yes', 'No'];
+const AC_OPTIONS = ['None', 'Central', 'Ductless', 'Window'];
+const HEATING_OPTIONS = ['None', 'Gas', 'Electric', 'Oil'];
+const FLOORING_OPTIONS = ['Hardwood', 'Carpet', 'Tile', 'Laminate'];
+const COUNTERTOP_OPTIONS = ['Granite', 'Marble', 'Quartz', 'Laminate'];
+const LAUNDRY_OPTIONS = ['None', 'In Unit', 'Shared'];
+const PARKING_OPTIONS = ['None', 'Garage', 'Street', 'Driveway'];
+
+// Figma only had placeholder text for the checkboxes, so these labels are samples.
+const AMENITY_COLUMNS = [
+  ['Fitness Center', 'Pet Friendly', 'Doorman', 'Elevator'],
+  ['Business Center', 'Rooftop Deck', 'Wheelchair Ramp'],
+  ['Courtyard', 'Spa', 'Clubhouse'],
 ];
-const FEATURES = [
-  'Attic', 'Basement', 'Pool', 'Den', 'Sunroom', 'Loft', 'Patio', 'Balcony', 'Deck', 'Backyard',
-  'Front Yard', 'Pet Friendly', 'Dishwasher', 'Disposal', 'Microwave', 'Refrigerator',
-  'Ice Dispenser', 'Oven', 'Furnished',
+const FEATURE_COLUMNS = [
+  ['Furnished', 'Fireplace', 'Balcony', 'Garage', 'Basement', 'Dishwasher', 'Microwave'],
+  ['Walk-in Closet', 'Pantry', 'Skylight', 'Hot Tub', 'Security System', 'Smart Home'],
+  ['Patio', 'Garden', 'Pool', 'Storage', 'Elevator', 'Sprinklers'],
 ];
-const YES_NO = ['No', 'Yes'];
-const AC = ['None', 'Central', 'Ductless', 'Window'];
-const HEATING = ['None', 'Central', 'Electric', 'Gas'];
-const FLOORING = ['Hardwood', 'Carpet', 'Tile', 'Laminate'];
-const COUNTERTOP = ['Marble', 'Granite', 'Quartz', 'Laminate'];
-const LAUNDRY = ['In Unit', 'Laundry Facility', 'None'];
-const PARKING = ['None', 'Garage', 'Street', 'Driveway', 'Lot'];
-const PARKING_SPACES = ['0', '1', '2', '3', '4+'];
+const MEDIA_ROWS = [
+  'Kitchen',
+  'Full Bathroom 1',
+  'Full Bathroom 2',
+  'Half Bathrooms 1',
+  'Half Bathrooms 2',
+];
+
+// Demo rule: these addresses are "already owned" and open the Verify Address popup.
+const TAKEN_ADDRESSES = ['1012 ocean avenue'];
+// Demo: the very first check always shows the Verify Address popup (set to false to disable).
+const SHOW_VERIFY_FIRST = true;
+
 
 const VERIFY_TEXT =
   'This property is currently owned by another user in Loftus. We will send the current owner of this property a notification informing them that another user is claiming to be the owner of this property. If the current owner verifies that this property is no longer theirs, or if they do not have reoccurring transactions and they have not responded within 7 calendar days, then you will be granted permission to create this property on Loftus. If you would like a faster response, please attach the deed of this property below. One of our agents will review and provide feedback as quickly as possible. We thank you for your cooperation and apologize for any inconvenience this may have caused.';
 
-const INITIAL_ROOMS = ['Kitchen', 'Full Bathroom 1', 'Full Bathroom 2', 'Half Bathroom 1', 'Half Bathrooms 2'];
+const INITIAL = {
+  title: '',
+  address1: '',
+  address2: '',
+  city: '',
+  state: '',
+  zip: '',
+  yearBuilt: '',
+  propertyType: '',
+  houseStyle: '',
+  metro: '',
+  lotSize: '',
+  description: '',
+  sqft: '',
+  studio: 'No',
+  bedrooms: '0',
+  fullBaths: '0',
+  halfBaths: '0',
+  ac: '',
+  heating: '',
+  flooring: '',
+  countertop: '',
+  laundry: '',
+  parking: '',
+  parkingSpaces: '',
+  guestParking: '',
+};
 
-/* ---------------- progress bar ---------------- */
-const Stepper = ({ step }) => (
-  <View style={styles.stepper}>
-    <View style={styles.stepLine} />
-    <View style={styles.stepRow}>
-      {STEPS.map((label, i) => {
-        const n = i + 1;
-        const done = n < step;
-        const current = n === step;
-        return (
-          <View key={label} style={styles.stepSlot}>
-            {current && (
-              <View style={styles.stepLabelWrap}>
-                <Text style={styles.stepLabel}>{label}</Text>
-              </View>
-            )}
-            <View
-              style={[
-                styles.dot,
-                (done || current) && styles.dotOn,
-                done && styles.dotDone,
-              ]}
-            >
-              {done ? <Text style={styles.dotTick}>✓</Text> : null}
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  </View>
-);
+const toggleIn = (list, item) =>
+  list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
 
 const AddPropertyScreen = ({ navigation }) => {
-  const [step, setStep] = useState(1);
-  const [available, setAvailable] = useState(false);
-  const [verifyOpen, setVerifyOpen] = useState(false);
-  const [deedAttached, setDeedAttached] = useState(false);
+  const scrollRef = useRef(null);
+  const nextId = useRef(1);
 
-  const [form, setForm] = useState({
-    title: '', address1: '', address2: '', city: '', state: '', zip: '',
-    yearBuilt: '', propertyType: '', houseStyle: '', metro: '', lotSize: '', description: '',
-    amenities: [],
-    squareFeet: '', studio: 'No', bedrooms: '0', fullBaths: '0', halfBaths: '0',
-    ac: '', heating: '', flooring: '', countertop: '', laundry: '',
-    parking: '', parkingSpaces: '', guestParking: '',
-    features: [],
-  });
-  const [defaultImage, setDefaultImage] = useState(null);
-  const [rooms, setRooms] = useState(INITIAL_ROOMS.map((name) => ({ name, saved: true })));
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState(INITIAL);
+  const [available, setAvailable] = useState(false);
+  const [verifyVisible, setVerifyVisible] = useState(false);
+  const verifyShown = useRef(false);
+  const insets = useSafeAreaInsets();
+  const { height: screenH } = useWindowDimensions();
+  const [amenities, setAmenities] = useState([]);
+  const [features, setFeatures] = useState([]);
+  const [customRows, setCustomRows] = useState([]);
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
-  const toggle = (key) => (item) =>
-    setForm((f) => ({
-      ...f,
-      [key]: f[key].includes(item) ? f[key].filter((x) => x !== item) : [...f[key], item],
-    }));
-
-  // Address changed -> must check availability again.
   const setAddress = (key) => (value) => {
+    setForm((f) => ({ ...f, [key]: value }));
     setAvailable(false);
-    set(key)(value);
+  };
+
+  const goTo = (n) => {
+    setStep(n);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   };
 
   const goBack = () => {
-    if (step > 1) setStep(step - 1);
-    else navigation.goBack();
+    if (step > 0) goTo(step - 1);
+    else navigation?.goBack();
   };
 
-  // Android back button goes to the previous step first.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (step > 1) {
-        setStep(step - 1);
+      if (step > 0) {
+        goTo(step - 1);
         return true;
       }
       return false;
     });
     return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const checkAvailability = () => {
-    if (!form.title.trim() || !form.address1.trim() || !form.city.trim() || !form.state || !form.zip.trim()) {
-      Alert.alert('Missing details', 'Please fill title, address, city, state and zipcode.');
+  const checkAddress = () => {
+    const missing = ['title', 'address1', 'city', 'state', 'zip'].some(
+      (k) => !form[k].trim()
+    );
+    if (missing) {
+      Alert.alert(
+        'Missing details',
+        'Please fill property title, address line 1, city, state and zipcode.'
+      );
       return;
     }
-    // Demo rule: an address starting with "1012" already belongs to another user.
-    if (/^1012\b/.test(form.address1.trim())) {
-      setDeedAttached(false);
-      setVerifyOpen(true);
+    if (
+      TAKEN_ADDRESSES.includes(form.address1.trim().toLowerCase()) ||
+      (SHOW_VERIFY_FIRST && !verifyShown.current)
+    ) {
+      verifyShown.current = true;
+      setVerifyVisible(true);
     } else {
       setAvailable(true);
     }
   };
 
-  const sendVerification = () => {
-    if (!deedAttached) {
-      Alert.alert('Deed needed', 'Please attach the deed or press Cancel.');
-      return;
-    }
-    setVerifyOpen(false);
-    Alert.alert('Request sent', 'We will notify you once the address is verified.');
-  };
+  const pickImage = () =>
+    Alert.alert('Upload', 'Image picker will open here once it is connected.');
 
-  const addRoom = () => setRooms((r) => [...r, { name: '', saved: false }]);
-  const renameRoom = (i, name) => setRooms((r) => r.map((x, k) => (k === i ? { ...x, name } : x)));
-  const saveRoom = (i) => setRooms((r) => r.map((x, k) => (k === i && x.name.trim() ? { ...x, saved: true } : x)));
-  const removeRoom = (i) => setRooms((r) => r.filter((_, k) => k !== i));
+  const finish = () =>
+    Alert.alert('Property added', `${form.title || 'Your property'} was added successfully.`, [
+      { text: 'OK', onPress: () => navigation?.goBack() },
+    ]);
 
-  const finish = () => {
-    const fullBaths = parseInt(form.fullBaths, 10) || 0;
-    const halfBaths = parseInt(form.halfBaths, 10) || 0;
-    const newProperty = {
-      id: `new-${Date.now()}`,
-      title: form.title.trim() || 'New Property',
-      address: `${form.address1}, ${form.city}, ${form.state} ${form.zip}`,
-      beds: `${parseInt(form.bedrooms, 10) || 0} Bed`,
-      baths: `${fullBaths + halfBaths} Baths`,
-      sqft: `${form.squareFeet || 0} sqft`,
-      price: '',
-      timeAgo: 'Pending review',
-      images: [defaultImage || IMAGES.house1],
-      description: form.description,
-      facts: [
-        { label: 'Deposit', value: '$0' },
-        { label: 'Lease Term', value: '12' },
-        { label: 'Available Date', value: '-' },
-        { label: 'Online Home', value: 'No' },
-        { label: 'Year Built', value: form.yearBuilt || '-' },
-        { label: 'Lot Size', value: form.lotSize ? `${form.lotSize} SF` : '-' },
-        { label: 'Property Type', value: form.propertyType || '-' },
-        { label: 'House Style', value: form.houseStyle || '-' },
-        { label: 'Nearest Metro', value: form.metro ? `${form.metro} mi` : '-' },
-        { label: 'Laundry', value: form.laundry || '-' },
-        { label: 'Flooring', value: form.flooring || '-' },
-        { label: 'Countertop Type', value: form.countertop || '-' },
-        { label: 'Air Conditioning', value: form.ac || '-' },
-        { label: 'Heating', value: form.heating || '-' },
-      ],
-      features: form.features,
-      amenities: form.amenities,
-      status: 'Pending',
-    };
-    navigation.navigate('Properties', { newProperty });
-  };
-
-  const next = () => setStep((s) => Math.min(s + 1, 4));
-
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={goBack}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Property</Text>
-        <View style={styles.headerBtn} />
-      </View>
-
-      <Stepper step={step} />
-
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* ---------- Step 1: Location ---------- */}
-        {step === 1 && (
-          <>
-            <Field label="Property Title" value={form.title} onChangeText={set('title')} />
-            <Field label="Address Line 1" value={form.address1} onChangeText={setAddress('address1')} />
-            <Field label="Address Line 2" value={form.address2} onChangeText={setAddress('address2')} />
-            <Field label="City" value={form.city} onChangeText={setAddress('city')} />
-            <SelectField label="State" value={form.state} options={STATES} onChange={setAddress('state')} />
-            <Field
-              label="Zipcode"
+  /* ---------------- step renderers ---------------- */
+  const renderLocation = () => (
+    <>
+      <View style={styles.fields}>
+        <Stack gap={16}>
+          <Group label="Property Title">
+            <TextBox value={form.title} onChangeText={setAddress('title')} />
+          </Group>
+          <Group label="Address Line 1">
+            <TextBox value={form.address1} onChangeText={setAddress('address1')} />
+          </Group>
+          <Group label="Address Line 2">
+            <TextBox value={form.address2} onChangeText={setAddress('address2')} />
+          </Group>
+          <Group label="City">
+            <TextBox value={form.city} onChangeText={setAddress('city')} />
+          </Group>
+          <Group label="State">
+            <SelectBox
+              value={form.state}
+              options={STATES}
+              onChange={(v) => {
+                set('state')(v);
+                setAvailable(false);
+              }}
+            />
+          </Group>
+          <Group label="Zipcode">
+            <TextBox
               value={form.zip}
               onChangeText={setAddress('zip')}
               keyboardType="number-pad"
+              maxLength={10}
             />
+          </Group>
+        </Stack>
+      </View>
 
-            {available ? (
-              <>
-                <View style={styles.availableRow}>
-                  <Text style={styles.availableTick}>✓</Text>
-                  <Text style={styles.availableText}>Available!</Text>
-                </View>
-                <View style={styles.mapBox}>
-                  <Image source={IMAGES.map} style={styles.mapImage} />
-                  <View style={styles.mapExpand}>
-                    <Text style={styles.mapExpandText}>⤢</Text>
-                  </View>
-                </View>
-                <PrimaryButton title="Next" onPress={next} style={styles.bottomBtn} />
-              </>
-            ) : (
-              <PrimaryButton
-                title="Check Address Availability"
-                onPress={checkAvailability}
-                style={styles.bottomBtn}
-              />
-            )}
-          </>
-        )}
+      {!available ? (
+        <PrimaryButton
+          title="Check Address Availability"
+          onPress={checkAddress}
+          style={styles.mt32}
+        />
+      ) : (
+        <>
+          <View style={styles.availableRow}>
+            <Image source={AP_ICONS.check} style={styles.availableCheck} resizeMode="contain" />
+            <Text style={styles.availableText}>Available!</Text>
+          </View>
+          <MapCard style={styles.mapTop} onExpand={() => navigation?.navigate('MapViewScreen')} />
+          <PrimaryButton title="Next" onPress={() => goTo(1)} style={styles.mt32} />
+        </>
+      )}
+    </>
+  );
 
-        {/* ---------- Step 2: Description ---------- */}
-        {step === 2 && (
-          <>
-            <Field
-              label="Year Built"
+  const renderDescription = () => (
+    <>
+      <View style={styles.fields}>
+        <Stack gap={20}>
+          <Group label="Year Built">
+            <TextBox
               value={form.yearBuilt}
               onChangeText={set('yearBuilt')}
               keyboardType="number-pad"
+              maxLength={4}
             />
-            <SelectField label="Property Type" value={form.propertyType} options={PROPERTY_TYPES} onChange={set('propertyType')} />
-            <SelectField label="House Style" value={form.houseStyle} options={HOUSE_STYLES} onChange={set('houseStyle')} />
-            <Field
-              label="Nearest Metro"
+          </Group>
+          <Group label="Property Type">
+            <SelectBox
+              value={form.propertyType}
+              options={PROPERTY_TYPES}
+              onChange={set('propertyType')}
+            />
+          </Group>
+          <Group label="House Style">
+            <SelectBox value={form.houseStyle} options={HOUSE_STYLES} onChange={set('houseStyle')} />
+          </Group>
+          <Group label="Nearest Metro">
+            <TextBox
               value={form.metro}
               onChangeText={set('metro')}
               keyboardType="decimal-pad"
               suffix="mi"
             />
-            <Field
-              label="Lot Size"
+          </Group>
+          <Group label="Lot Size">
+            <TextBox
               value={form.lotSize}
               onChangeText={set('lotSize')}
               keyboardType="number-pad"
               suffix="SF"
             />
-            <Field label="Description" value={form.description} onChangeText={set('description')} multiline />
+          </Group>
+          <Group label="Description">
+            <TextArea value={form.description} onChangeText={set('description')} />
+          </Group>
+        </Stack>
+      </View>
 
-            <Text style={styles.groupTitle}>Amenities</Text>
-            <CheckGrid items={AMENITIES} selected={form.amenities} onToggle={toggle('amenities')} />
+      <View style={styles.mt24}>
+        <SectionTitle>Amenities</SectionTitle>
+        <View style={styles.mt24}>
+          <CheckColumns
+            columns={AMENITY_COLUMNS}
+            selected={amenities}
+            onToggle={(it) => setAmenities((l) => toggleIn(l, it))}
+          />
+        </View>
+      </View>
 
-            <PrimaryButton title="Next" onPress={next} style={styles.bottomBtn} />
-          </>
-        )}
+      <PrimaryButton title="Next" onPress={() => goTo(2)} style={styles.mt24} />
+    </>
+  );
 
-        {/* ---------- Step 3: Features ---------- */}
-        {step === 3 && (
-          <>
-            <Field label="Square Feet" value={form.squareFeet} onChangeText={set('squareFeet')} keyboardType="number-pad" />
-            <SelectField label="Studio" value={form.studio} options={YES_NO} onChange={set('studio')} />
-            <Field label="Bedrooms" value={form.bedrooms} onChangeText={set('bedrooms')} keyboardType="number-pad" />
-            <Field label="Full Bathrooms" value={form.fullBaths} onChangeText={set('fullBaths')} keyboardType="number-pad" />
-            <Field label="Half Bathrooms" value={form.halfBaths} onChangeText={set('halfBaths')} keyboardType="number-pad" />
-            <SelectField label="Air Conditioning" value={form.ac} options={AC} onChange={set('ac')} placeholder="Select.." />
-            <SelectField label="Heating" value={form.heating} options={HEATING} onChange={set('heating')} placeholder="Select" />
-            <SelectField label="Flooring" value={form.flooring} options={FLOORING} onChange={set('flooring')} placeholder="Select" />
-            <SelectField label="Countertop Type" value={form.countertop} options={COUNTERTOP} onChange={set('countertop')} placeholder="Select" />
-            <SelectField label="Laundry" value={form.laundry} options={LAUNDRY} onChange={set('laundry')} placeholder="Select" />
-            <SelectField label="Parking" value={form.parking} options={PARKING} onChange={set('parking')} placeholder="Select" />
-            <SelectField label="Parking Spaces" value={form.parkingSpaces} options={PARKING_SPACES} onChange={set('parkingSpaces')} placeholder="Select" />
-            <SelectField label="Guest Parking" value={form.guestParking} options={YES_NO} onChange={set('guestParking')} placeholder="Select" />
+  const renderFeatures = () => (
+    <>
+      <View style={styles.fields}>
+        <Stack gap={20}>
+          <Group label="Square Feet">
+            <TextBox value={form.sqft} onChangeText={set('sqft')} keyboardType="number-pad" />
+          </Group>
+          <Group label="Studio">
+            <SelectBox value={form.studio} options={YES_NO} onChange={set('studio')} />
+          </Group>
+          <Group label="Bedrooms">
+            <TextBox value={form.bedrooms} onChangeText={set('bedrooms')} keyboardType="number-pad" />
+          </Group>
+          <Group label="Full Bathrooms">
+            <TextBox value={form.fullBaths} onChangeText={set('fullBaths')} keyboardType="number-pad" />
+          </Group>
+          <Group label="Half Bathrooms">
+            <TextBox value={form.halfBaths} onChangeText={set('halfBaths')} keyboardType="number-pad" />
+          </Group>
+          <Group label="Air Conditioning">
+            <SelectBox value={form.ac} options={AC_OPTIONS} onChange={set('ac')} />
+          </Group>
+          <Group label="Heating">
+            <SelectBox value={form.heating} options={HEATING_OPTIONS} onChange={set('heating')} placeholder="Select" />
+          </Group>
+          <Group label="Flooring">
+            <SelectBox value={form.flooring} options={FLOORING_OPTIONS} onChange={set('flooring')} placeholder="Select" />
+          </Group>
+          <Group label="Countertop Type">
+            <SelectBox value={form.countertop} options={COUNTERTOP_OPTIONS} onChange={set('countertop')} placeholder="Select" />
+          </Group>
+          <Group label="Laundry">
+            <SelectBox value={form.laundry} options={LAUNDRY_OPTIONS} onChange={set('laundry')} placeholder="Select" />
+          </Group>
+          <Group label="Parking">
+            <SelectBox value={form.parking} options={PARKING_OPTIONS} onChange={set('parking')} placeholder="Select" />
+          </Group>
+          <Group label="Parking Spaces">
+            <TextBox value={form.parkingSpaces} onChangeText={set('parkingSpaces')} keyboardType="number-pad" />
+          </Group>
+          <Group label="Guest Parking">
+            <SelectBox value={form.guestParking} options={YES_NO} onChange={set('guestParking')} placeholder="Select" />
+          </Group>
+        </Stack>
+      </View>
 
-            <Text style={styles.groupTitle}>Check all that apply</Text>
-            <CheckGrid items={FEATURES} selected={form.features} onToggle={toggle('features')} />
+      <View style={styles.mt24}>
+        <SectionTitle>Check all that apply</SectionTitle>
+        <View style={styles.mt24}>
+          <CheckColumns
+            columns={FEATURE_COLUMNS}
+            selected={features}
+            onToggle={(it) => setFeatures((l) => toggleIn(l, it))}
+          />
+        </View>
+      </View>
 
-            <PrimaryButton title="Next" onPress={next} style={styles.bottomBtn} />
-          </>
-        )}
+      <PrimaryButton title="Next" onPress={() => goTo(3)} style={styles.mt32} />
+    </>
+  );
 
-        {/* ---------- Step 4: Media ---------- */}
-        {step === 4 && (
-          <>
-            <Text style={styles.mediaTitle}>Default Image</Text>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.uploadBox}
-              // No picker library yet: this picks a sample photo. See notes to add a real picker.
-              onPress={() => setDefaultImage(IMAGES.house2)}
-            >
-              {defaultImage ? (
-                <Image source={defaultImage} style={styles.uploadPreview} />
-              ) : (
-                <>
-                  <ImageGlyph size={24} />
-                  <Text style={styles.uploadText}>Upload</Text>
-                </>
-              )}
-            </TouchableOpacity>
+  const renderMedia = () => (
+    <>
+      <View style={styles.mediaTop}>
+        <SectionTitle>Default Image</SectionTitle>
+        <View style={styles.mt24}>
+          <DefaultImageBox onUpload={pickImage} />
+        </View>
+      </View>
 
-            {rooms.map((room, i) =>
-              room.saved ? (
-                <View key={`${room.name}-${i}`} style={styles.roomRow}>
-                  <Text style={styles.roomText}>{room.name}</Text>
-                  <ImageGlyph size={12} color="#8A8A8A" />
-                </View>
-              ) : (
-                <View key={`new-${i}`} style={[styles.roomRow, styles.roomRowEdit]}>
-                  <Text style={styles.roomHint}>Add Room</Text>
-                  <View style={styles.roomInputWrap}>
-                    <TextInputSmall
-                      value={room.name}
-                      onChangeText={(t) => renameRoom(i, t)}
-                      onSubmit={() => saveRoom(i)}
-                    />
-                  </View>
-                  <TouchableOpacity onPress={() => saveRoom(i)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <ImageGlyph size={12} color="#8A8A8A" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    onPress={() => removeRoom(i)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={styles.removeText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ),
-            )}
+      <View style={styles.mediaRows}>
+        <Stack gap={16}>
+          {MEDIA_ROWS.map((label) => (
+            <MediaRow key={label} label={label} onPress={pickImage} />
+          ))}
+          {customRows.map((row) => (
+            <CustomMediaRow
+              key={row.id}
+              label={row.label}
+              onChangeLabel={(t) =>
+                setCustomRows((rows) =>
+                  rows.map((r) => (r.id === row.id ? { ...r, label: t } : r))
+                )
+              }
+              onUpload={pickImage}
+              onRemove={() => setCustomRows((rows) => rows.filter((r) => r.id !== row.id))}
+            />
+          ))}
+          <View style={styles.addWrap}>
+            <AddLink
+              onPress={() =>
+                setCustomRows((rows) => [...rows, { id: nextId.current++, label: '' }])
+              }
+            />
+          </View>
+        </Stack>
+      </View>
 
-            <TouchableOpacity style={styles.addLink} onPress={addRoom}>
-              <Text style={styles.addLinkText}>+ Add</Text>
-            </TouchableOpacity>
+      <PrimaryButton title="Finish" onPress={finish} />
+    </>
+  );
 
-            <PrimaryButton title="Finish" onPress={finish} style={styles.bottomBtn} />
-          </>
-        )}
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <ScreenHeader title="Add Property" onBack={goBack} />
+
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.stepperWrap}>
+          <Stepper steps={STEPS} current={step} />
+        </View>
+
+        {step === 0 && renderLocation()}
+        {step === 1 && renderDescription()}
+        {step === 2 && renderFeatures()}
+        {step === 3 && renderMedia()}
       </ScrollView>
 
-      {/* ---------- Verify Address popup ---------- */}
-      <Modal visible={verifyOpen} transparent animationType="fade" onRequestClose={() => setVerifyOpen(false)}>
-        <View style={styles.backdrop}>
-          <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Verify Address</Text>
-            <Text style={styles.dialogBody}>{VERIFY_TEXT}</Text>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.uploadBtn}
-              // No picker library yet: this marks the deed as attached.
-              onPress={() => setDeedAttached(true)}
+      {/* Verify Address popup */}
+      <Modal
+        visible={verifyVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setVerifyVisible(false)}
+      >
+        <View style={[styles.overlay, { paddingTop: insets.top + 84 }]}>
+          <View style={[styles.modalCard, { maxHeight: screenH - insets.top - 84 - 16 }]}>
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
             >
-              <Text style={styles.uploadBtnText}>{deedAttached ? '✓  Deed attached' : '⤒  Upload'}</Text>
-            </TouchableOpacity>
-
-            <View style={styles.dialogButtons}>
+              <View style={styles.modalBlock}>
+                <Text style={styles.modalTitle}>Verify Address</Text>
+                <Text style={styles.modalText}>{VERIFY_TEXT}</Text>
+                <TouchableOpacity activeOpacity={0.8} style={styles.modalUpload} onPress={pickImage}>
+                  <Image source={AP_ICONS.upload} style={styles.modalUploadIcon} resizeMode="contain" />
+                  <Text style={styles.modalUploadText}>Upload</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+            <View style={styles.modalButtons}>
               <PrimaryButton
                 title="Cancel"
                 outlined
-                onPress={() => setVerifyOpen(false)}
-                style={styles.dialogBtn}
+                height={44}
+                style={styles.modalBtn}
+                onPress={() => setVerifyVisible(false)}
               />
-              <PrimaryButton title="Send" onPress={sendVerification} style={styles.dialogBtn} />
+              <PrimaryButton
+                title="Send"
+                height={44}
+                style={[styles.modalBtn, { marginLeft: 10 }]}
+                onPress={() => {
+                  setVerifyVisible(false);
+                  Alert.alert('Request sent', 'We will notify you once the address is verified.');
+                }}
+              />
             </View>
           </View>
         </View>
@@ -415,161 +478,93 @@ const AddPropertyScreen = ({ navigation }) => {
   );
 };
 
-// Small text input used for the "Add Room" row.
-const TextInputSmall = ({ value, onChangeText, onSubmit }) => (
-  <TextInput
-    value={value}
-    onChangeText={onChangeText}
-    onSubmitEditing={onSubmit}
-    placeholder="Room name"
-    placeholderTextColor="#B5B5B5"
-    style={styles.roomInput}
-    returnKeyType="done"
-  />
-);
-
 export default AddPropertyScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { paddingHorizontal: 15, paddingBottom: 30 },
 
-  header: {
-    height: 48,
+  // header ends at 52, stepper label at 59, fields at 122
+  stepperWrap: { marginTop: 7 },
+  fields: { marginTop: 20 },
+  mt24: { marginTop: 24 },
+  mt32: { marginTop: 32 },
+
+  availableRow: {
+    marginTop: 24,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 14, color: TEXT },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
+  availableCheck: { width: 24, height: 24, tintColor: '#4BB543', marginRight: 4 },
+  availableText: {
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#4BB543',
+    includeFontPadding: false,
   },
 
-  // progress bar
-  stepper: { marginHorizontal: 36, marginTop: 8, marginBottom: 16, height: 36, justifyContent: 'flex-end' },
-  stepLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 6,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: '#FFD9CE',
-  },
-  stepRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  stepSlot: { width: 14, alignItems: 'center' },
-  stepLabelWrap: { position: 'absolute', bottom: 20, width: 90, alignItems: 'center' },
-  stepLabel: { fontFamily: FONT.medium, fontSize: 9, color: ORANGE },
-  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFB9A5', alignItems: 'center', justifyContent: 'center' },
-  dotOn: { backgroundColor: ORANGE },
-  dotDone: { width: 14, height: 14, borderRadius: 7 },
-  dotTick: { color: '#FFFFFF', fontSize: 8, lineHeight: 10, fontWeight: '700' },
-
-  content: { paddingHorizontal: 16, paddingBottom: 28 },
-
-  groupTitle: { fontFamily: FONT.medium, fontSize: 10, color: TEXT, marginTop: 4, marginBottom: 12 },
-  bottomBtn: { marginTop: 14 },
-
-  availableRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 6 },
-  availableTick: { color: '#2BA84A', fontSize: 12, marginRight: 4 },
-  availableText: { fontFamily: FONT.regular, fontSize: 10, color: '#2BA84A' },
-  mapBox: { height: 120, borderRadius: 10, overflow: 'hidden', marginTop: 8, backgroundColor: '#EAEAEA' },
-  mapImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  mapExpand: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapExpandText: { fontSize: 11, color: TEXT },
+  mapTop: { marginTop: 24 },
 
   // media step
-  mediaTitle: { fontFamily: FONT.medium, fontSize: 12, color: TEXT, marginBottom: 10 },
-  uploadBox: {
-    height: 110,
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    overflow: 'hidden',
+  mediaTop: { marginTop: 36 },
+  mediaRows: { marginTop: 16, minHeight: 479, paddingBottom: 32 },
+  addWrap: { marginTop: -2.5 },
+
+  // verify popup (Figma: card 345 wide, radius 24, 84px below the header)
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingHorizontal: 15,
   },
-  uploadPreview: { width: '100%', height: '100%', resizeMode: 'cover' },
-  uploadText: { fontFamily: FONT.regular, fontSize: 9, color: '#8A8A8A', marginTop: 6 },
-  roomRow: {
-    height: 34,
+  modalCard: {
+    alignSelf: 'stretch',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+  },
+  modalScroll: { flexGrow: 0, flexShrink: 1, marginHorizontal: -4 },
+  modalScrollContent: { alignItems: 'center' },
+  modalBlock: { width: 304 },
+  modalTitle: {
+    textAlign: 'center',
+    fontFamily: FONT.semibold,
+    fontSize: 20,
+    lineHeight: 27,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  modalText: {
+    marginTop: 8,
+    minHeight: 437,
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 23,
+    letterSpacing: 0.14,
+    color: '#404040',
+    includeFontPadding: false,
+  },
+  modalUpload: {
+    marginTop: 16,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#C2C2C2',
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F1F1F1',
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-  },
-  roomRowEdit: { backgroundColor: '#FFFFFF' },
-  roomText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
-  roomHint: { fontFamily: FONT.regular, fontSize: 8, color: '#9A9A9A', marginRight: 8 },
-  roomInputWrap: {
-    flex: 1,
-    height: 22,
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-    borderRadius: 4,
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    marginRight: 8,
-  },
-  roomInput: { fontFamily: FONT.regular, fontSize: 9, color: TEXT, padding: 0, height: 20 },
-  removeBtn: {
-    position: 'absolute',
-    top: -8,
-    right: -6,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#E04848',
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  removeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
-  addLink: { alignSelf: 'flex-end', marginTop: 2 },
-  addLinkText: { fontFamily: FONT.regular, fontSize: 9, color: ORANGE },
-
-  // verify popup
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    justifyContent: 'center',
-    paddingHorizontal: 14,
+  modalUploadIcon: { width: 20, height: 20, tintColor: '#404040', marginRight: 4 },
+  modalUploadText: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#404040',
+    includeFontPadding: false,
   },
-  dialog: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14 },
-  dialogTitle: { fontFamily: FONT.semibold, fontSize: 13, color: '#000000', textAlign: 'center', marginBottom: 8 },
-  dialogBody: { fontFamily: FONT.regular, fontSize: 9, lineHeight: 14, color: TEXT },
-  uploadBtn: {
-    height: 32,
-    borderWidth: 1,
-    borderColor: '#D9D9D9',
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 18,
-  },
-  uploadBtnText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
-  dialogButtons: { flexDirection: 'row', justifyContent: 'center', marginTop: 12 },
-  dialogBtn: { width: 100, height: 32, marginHorizontal: 6 },
+  modalButtons: { marginTop: 32, flexDirection: 'row' },
+  modalBtn: { flex: 1 },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,14 @@ import {
   TouchableOpacity,
   StatusBar,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ICONS } from '../assets';
+import ScreenHeader from '../components/ScreenHeader';
 import { PROPERTIES } from '../constants/dummyData';
 
 const ORANGE = '#FF6C40';
-const TEXT = '#1C1C1C';
-const BORDER = '#EAEAEA';
+const CARD_BORDER = 'rgba(133, 135, 138, 0.3)';
 
 const FONT = {
   regular: 'Poppins-Regular',
@@ -24,52 +23,60 @@ const FONT = {
   semibold: 'Poppins-SemiBold',
 };
 
-const { width: W } = Dimensions.get('window');
-const CARD_W = W - 32;
-const IMAGE_H = 150;
-
+const PLUS = require('../assets/icons/PropPlus.png');
 const TABS = ['Active', 'Pending'];
 
+/* bed / bath / sqft item: icon 16 + 2px + text 11/500 */
 const Feature = ({ icon, label }) => (
-  <View style={styles.featureItem}>
+  <View style={styles.feature}>
     {icon ? <Image source={icon} style={styles.featureIcon} resizeMode="contain" /> : null}
     <Text style={styles.featureText}>{label}</Text>
   </View>
 );
 
-/** One property card: swipeable photos, name, details, address. */
+/* thin 9px vertical divider (the Figma line is a rotated 9px box) */
+const Divider = () => (
+  <View style={styles.dividerBox}>
+    <View style={styles.dividerLine} />
+  </View>
+);
+
+/**
+ * One property card (Figma: 345 x 300, radius 12, no top border).
+ * Picture 215 high with swipeable photos + dots, text block 8px from the left.
+ */
 const PropertyItem = ({ item, onPress }) => {
   const images = item.images?.length ? item.images : [];
   const [index, setIndex] = useState(0);
-  const indexRef = useRef(0);
+  const [pw, setPw] = useState(0);
 
-  const handleScroll = (e) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / CARD_W);
-    if (i !== indexRef.current && i >= 0 && i < images.length) {
-      indexRef.current = i;
-      setIndex(i);
-    }
+  const onScroll = (e) => {
+    if (!pw) return;
+    const i = Math.round(e.nativeEvent.contentOffset.x / pw);
+    if (i !== index && i >= 0 && i < images.length) setIndex(i);
   };
 
   return (
     <View style={styles.card}>
-      <View style={styles.imageWrap}>
-        <FlatList
-          data={images}
-          keyExtractor={(_, i) => String(i)}
-          horizontal
-          pagingEnabled
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={handleScroll}
-          getItemLayout={(_, i) => ({ length: CARD_W, offset: CARD_W * i, index: i })}
-          renderItem={({ item: img }) => (
-            <TouchableOpacity activeOpacity={0.95} onPress={() => onPress(item)}>
-              <Image source={img} style={styles.image} />
-            </TouchableOpacity>
-          )}
-        />
+      <View style={styles.picture} onLayout={(e) => setPw(e.nativeEvent.layout.width - 2)}>
+        {pw > 0 && (
+          <FlatList
+            data={images}
+            keyExtractor={(_, i) => String(i)}
+            horizontal
+            pagingEnabled
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={onScroll}
+            getItemLayout={(_, i) => ({ length: pw, offset: pw * i, index: i })}
+            renderItem={({ item: img }) => (
+              <TouchableOpacity activeOpacity={0.95} onPress={() => onPress(item)}>
+                <Image source={img} style={{ width: pw, height: 213 }} resizeMode="cover" />
+              </TouchableOpacity>
+            )}
+          />
+        )}
         {images.length > 1 && (
           <View style={styles.dots} pointerEvents="none">
             {images.map((_, i) => (
@@ -79,15 +86,15 @@ const PropertyItem = ({ item, onPress }) => {
         )}
       </View>
 
-      <TouchableOpacity activeOpacity={0.85} style={styles.details} onPress={() => onPress(item)}>
+      <TouchableOpacity activeOpacity={0.85} style={styles.info} onPress={() => onPress(item)}>
         <Text style={styles.title} numberOfLines={1}>
           {item.title}
         </Text>
         <View style={styles.featuresRow}>
           <Feature icon={ICONS.bed} label={item.beds} />
-          <View style={styles.divider} />
+          <Divider />
           <Feature icon={ICONS.bath} label={item.baths} />
-          <View style={styles.divider} />
+          <Divider />
           <Feature icon={ICONS.area} label={item.sqft} />
         </View>
         <Text style={styles.address} numberOfLines={1}>
@@ -99,6 +106,7 @@ const PropertyItem = ({ item, onPress }) => {
 };
 
 const PropertiesScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('Active');
   const [active] = useState(PROPERTIES);
   const [pending, setPending] = useState([]);
@@ -118,48 +126,52 @@ const PropertiesScreen = ({ navigation, route }) => {
   const openProperty = (property) => navigation.navigate('PropertyPageScreen', { property });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Properties</Text>
-        <View style={styles.headerBtn} />
+      <ScreenHeader title="Properties" onBack={() => navigation.goBack()} />
+
+      {/* Segmented control: 163 x 50, two tabs of 81.5 */}
+      <View style={styles.segmentRow}>
+        <View style={styles.segment}>
+          {TABS.map((t) => {
+            const on = tab === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                activeOpacity={0.8}
+                style={[styles.tab, on && styles.tabOn]}
+                onPress={() => setTab(t)}
+              >
+                <Text style={on ? styles.tabTextOn : styles.tabText}>{t}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
-      <View style={styles.tabRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, tab === t && styles.tabActive]}
-            onPress={() => setTab(t)}
-          >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: 31 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {data.length === 0 ? (
           <Text style={styles.empty}>No {tab.toLowerCase()} properties yet.</Text>
         ) : (
-          data.map((p) => <PropertyItem key={String(p.id)} item={p} onPress={openProperty} />)
+          data.map((p, i) => (
+            <View key={String(p.id)} style={i > 0 && styles.cardGap}>
+              <PropertyItem item={p} onPress={openProperty} />
+            </View>
+          ))
         )}
       </ScrollView>
 
-      {/* + : add a new property */}
+      {/* + : add a new property (Figma: 50 x 50, right 15, 54 above the bottom edge) */}
       <TouchableOpacity
         activeOpacity={0.85}
         style={styles.fab}
         onPress={() => navigation.navigate('AddPropertyScreen')}
       >
-        <Text style={styles.fabPlus}>+</Text>
+        <Image source={PLUS} style={styles.fabPlus} resizeMode="contain" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -170,90 +182,127 @@ export default PropertiesScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
 
-  header: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 14, color: TEXT },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
-  },
-
-  tabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    marginHorizontal: 16,
-  },
+  /* segmented control (top 99 => 3px under the header) */
+  segmentRow: { marginTop: 3, paddingHorizontal: 15, height: 50 },
+  segment: { width: 163, height: 50, flexDirection: 'row' },
   tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    marginBottom: -1,
-  },
-  tabActive: { borderBottomColor: ORANGE },
-  tabText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
-  tabTextActive: { fontFamily: FONT.medium, color: ORANGE },
-
-  content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 90 },
-  empty: { fontFamily: FONT.regular, fontSize: 11, color: '#8A8A8A', textAlign: 'center', marginTop: 40 },
-
-  card: {
-    width: CARD_W,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
+    flex: 1,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    marginBottom: 14,
-    overflow: 'hidden',
   },
-  imageWrap: { width: CARD_W - 2, height: IMAGE_H },
-  image: { width: CARD_W - 2, height: IMAGE_H, resizeMode: 'cover' },
+  tabOn: { borderBottomWidth: 2, borderBottomColor: ORANGE },
+  tabText: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: -0.22,
+    color: '#515151',
+    includeFontPadding: false,
+  },
+  tabTextOn: {
+    fontFamily: FONT.semibold,
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: -0.22,
+    color: ORANGE,
+    includeFontPadding: false,
+  },
+
+  /* list starts at Figma y 171 => 22px under the control */
+  content: { paddingTop: 22, paddingHorizontal: 15 },
+  cardGap: { marginTop: 24 },
+  empty: {
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#8A8A8A',
+    textAlign: 'center',
+    marginTop: 40,
+  },
+
+  /* card */
+  card: {
+    height: 300,
+    alignSelf: 'stretch',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: CARD_BORDER,
+    borderRadius: 12,
+  },
+  picture: {
+    height: 215,
+    borderWidth: 1,
+    borderColor: CARD_BORDER,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#EDEDED',
+  },
   dots: {
     position: 'absolute',
-    bottom: 8,
-    alignSelf: 'center',
+    bottom: 10,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  dot: { width: 5, height: 5, borderRadius: 3, marginHorizontal: 2 },
-  dotOn: { backgroundColor: ORANGE },
-  dotOff: { backgroundColor: '#FFFFFF' },
+  dot: { borderRadius: 5, marginHorizontal: 2 },
+  dotOn: { width: 9, height: 9, backgroundColor: ORANGE },
+  dotOff: { width: 7, height: 7, backgroundColor: '#FFFFFF' },
 
-  details: { paddingHorizontal: 10, paddingTop: 8, paddingBottom: 10 },
-  title: { fontFamily: FONT.semibold, fontSize: 11, color: '#000000', marginBottom: 4 },
-  featuresRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  featureItem: { flexDirection: 'row', alignItems: 'center' },
-  featureIcon: { width: 9, height: 9, tintColor: '#8A8A8A', marginRight: 3 },
-  featureText: { fontFamily: FONT.regular, fontSize: 7, color: '#6B6B6B' },
-  divider: { width: 1, height: 8, backgroundColor: '#D1D1D1', marginHorizontal: 6 },
-  address: { fontFamily: FONT.regular, fontSize: 7, color: '#6B6B6B' },
+  /* text block: starts 8px under the picture, 8px from the left */
+  info: { paddingLeft: 8 },
+  title: {
+    marginTop: 4.5,
+    fontFamily: FONT.semibold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  featuresRow: { marginTop: 6.5, height: 16, flexDirection: 'row', alignItems: 'center' },
+  feature: { flexDirection: 'row', alignItems: 'center' },
+  featureIcon: { width: 16, height: 16, tintColor: ORANGE, marginRight: 2 },
+  featureText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#4E4E4E',
+    includeFontPadding: false,
+  },
+  dividerBox: { width: 9, height: 16, marginHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
+  dividerLine: { width: 1, height: 9, backgroundColor: '#4E4E4E', opacity: 0.5 },
+  address: {
+    marginTop: 10,
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    includeFontPadding: false,
+  },
 
+  /* FAB */
   fab: {
     position: 'absolute',
-    right: 18,
-    bottom: 28,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    right: 15,
+    bottom: 54,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: ORANGE,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
+    elevation: 10,
+    shadowColor: '#000000',
     shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
   },
-  fabPlus: { color: '#FFFFFF', fontSize: 26, lineHeight: 30, fontFamily: FONT.regular },
+  fabPlus: { width: 22.4, height: 22.4, tintColor: '#FFFFFF' },
 });

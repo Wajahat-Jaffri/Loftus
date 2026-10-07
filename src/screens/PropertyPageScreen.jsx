@@ -11,16 +11,13 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ICONS, IMAGES } from '../assets';
-import AroundThisHome from './AroundThisHome';
-import OpenHouses from './OpenHouses';
-import PaymentEstimate from './PaymentEstimate';
-import ListingHistory from './ListingHistory';
-import LocationSection from './LocationSection';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IMAGES } from '../assets';
+import ScreenHeader from '../components/ScreenHeader';
+import { MapCard } from '../components/AddPropertyParts';
+import BottomActionBar from './BottomActionBar';
 
 const ORANGE = '#FF6C40';
-const TEXT = '#1C1C1C';
 
 const FONT = {
   regular: 'Poppins-Regular',
@@ -28,82 +25,95 @@ const FONT = {
   semibold: 'Poppins-SemiBold',
 };
 
-const { width: W } = Dimensions.get('window');
-const HERO_H = Math.round(W * 0.58);
-const THUMB_GAP = 8;
-const THUMB_W = Math.round((W - 16 - THUMB_GAP * 3) / 3.2);
-const THUMB_H = Math.round(THUMB_W * 0.72);
+const ICON = {
+  trash: require('../assets/icons/PropTrash.png'),
+  pencil: require('../assets/icons/PropPencil.png'),
+  plus: require('../assets/icons/PropPlus.png'),
+  check: require('../assets/icons/Check.png'),
+};
 
-const DEFAULT_FACTS = [
-  { label: 'Deposit', value: '$2,424' },
-  { label: 'Lease Term', value: '12' },
-  { label: 'Available Date', value: '27, Jan 2025' },
-  { label: 'Online Home', value: 'No' },
-  { label: 'Year Built', value: '2023' },
-  { label: 'Lot Size', value: '1,345 SF' },
-  { label: 'Property Type', value: 'Townhouse' },
-  { label: 'House Style', value: 'Ranch' },
-  { label: 'Nearest Metro', value: '1 mi' },
-  { label: 'Laundry', value: 'In Unit' },
-  { label: 'Flooring', value: 'Hardwood' },
-  { label: 'Countertop Type', value: 'Marble' },
-  { label: 'Air Conditioning', value: 'Ductless' },
-  { label: 'Heating', value: 'No' },
+const { width: W } = Dimensions.get('window');
+const HERO_H = 305;
+
+/* ------------------------------------------------------------------ */
+/* Default data (used when route.params.property has nothing)           */
+/* ------------------------------------------------------------------ */
+const DEFAULT_COLUMNS = [
+  [
+    ['Deposit', '$2,424'],
+    ['Entire Home', 'No'],
+    ['Property Type', 'Townhouse'],
+    ['Laundry', 'In Unit'],
+    ['Air Conditioning', 'Ductless'],
+  ],
+  [
+    ['Lease Term', '12'],
+    ['Year Built', '2023'],
+    ['House Style', 'Ranch'],
+    ['Flooring', 'Hardwood'],
+    ['Heating', 'No'],
+  ],
+  [
+    ['Available Date', '27, Jan 2025'],
+    ['Lot Size', '1,345 SF'],
+    ['Nearest Metro', '1 mi'],
+    ['Countertop Type', 'Marble'],
+  ],
 ];
+const COLUMN_WIDTHS = [85.89, 111.16, 99.03];
+
 const DEFAULT_FEATURES = [
-  'Attic', 'Basement', 'Pool', 'Loft', 'Sunroom', 'Backyard', 'Deck', 'Patio', 'Front yard',
-  'Dishwasher', 'Disposal', 'Microwave', 'Ice Dispenser', 'Oven', 'Furnished', 'Den', 'Balcony',
-  'Pet friendly',
+  ['Attic', 'Basement', 'Pool'],
+  ['Loft', 'Sunroom', 'Backyard'],
+  ['Deck', 'Patio', 'Front yard'],
+  ['Dishwasher', 'Disposal', 'Microwave'],
+  ['Ice Dispenser', 'Oven', 'Furnished'],
+  ['Den', 'Balcony', 'Pet Friendly'],
 ];
+// [label, wrapWidth] - labels that wrap onto two lines in Figma get a width.
 const DEFAULT_AMENITIES = [
-  'Fitness Center', 'Business Center', 'ClubHouse', 'Game Room', 'Dog Park', 'Concierge',
-  'Package service', 'Elevator',
+  [['Fitness Center', 58], ['Business Center', 59], ['Clubhouse']],
+  [['Game Room'], ['Dog Park'], ['Concierge']],
+  [['Package service', 61, 105], ['Elevator', undefined, 101]],
 ];
 const DEFAULT_DESCRIPTION =
   "Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident";
 
-const SCHOOLS = [
-  { rating: '6/10', name: 'PS 212', info: 'Public, PreK-5 • Serves this home • 0.0mi' },
-  { rating: '7/10', name: 'IS 145 Joseph Pulitzer', info: 'Public, 6-8 • Serves this home • 0.1mi' },
-  { rating: '3/10', name: 'Newtown High School', info: 'Public, 9-12 • Serves this home • 1.0mi' },
-];
+const MENU = ['Lease', 'Sale Listing', 'Rental Listing', 'Service Staff'];
 
-const MENU = [
-  { label: 'Lease', icon: ICONS.lease },
-  { label: 'Sale Listing', icon: ICONS.moneyWavy },
-  { label: 'Rental Listing', icon: ICONS.buildingOffice },
-  { label: 'Service Staff', icon: ICONS.serviceStaff },
-];
-
-const TrashIcon = () => (
-  <View style={styles.trash}>
-    <View style={styles.trashLid} />
-    <View style={styles.trashBody} />
+/* ------------------------------------------------------------------ */
+/* Small pieces                                                         */
+/* ------------------------------------------------------------------ */
+const Tile = ({ label, value, last }) => (
+  <View style={[styles.tile, !last && styles.tileGap]}>
+    <Text style={styles.tileLabel}>{label}</Text>
+    <Text style={styles.tileValue}>{value}</Text>
   </View>
 );
 
-const Checked = ({ label }) => (
-  <View style={styles.checkedItem}>
-    <View style={styles.checkedCircle}>
-      <Text style={styles.checkedTick}>✓</Text>
+const Chip = ({ label, wrapWidth, tall }) => (
+  <View style={[styles.chip, tall && styles.chipTall]}>
+    <View style={styles.chipCircle}>
+      <Image source={ICON.check} style={styles.chipCheck} resizeMode="contain" />
     </View>
-    <Text style={styles.checkedLabel} numberOfLines={2}>
-      {label}
-    </Text>
+    <Text style={[styles.chipLabel, wrapWidth ? { width: wrapWidth } : null]}>{label}</Text>
   </View>
 );
 
+const Line = ({ bottom = 15 }) => <View style={[styles.line, { marginBottom: bottom }]} />;
+
+/* ------------------------------------------------------------------ */
+/* Screen                                                               */
+/* ------------------------------------------------------------------ */
 const PropertyPageScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const property = route?.params?.property ?? {};
-  const images = property.images?.length ? property.images : [IMAGES.house3, IMAGES.house2, IMAGES.house1];
-  const facts = property.facts ?? DEFAULT_FACTS;
-  const features = property.features?.length ? property.features : property.features ? [] : DEFAULT_FEATURES;
-  const amenities = property.amenities?.length ? property.amenities : property.amenities ? [] : DEFAULT_AMENITIES;
+  const images = property.images?.length
+    ? property.images
+    : [IMAGES.house3, IMAGES.house2, IMAGES.house1, IMAGES.house3, IMAGES.house2];
 
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Turned off while the interest-rate slider is dragged.
-  const [scrollEnabled, setScrollEnabled] = useState(true);
   const heroRef = useRef(null);
   const indexRef = useRef(0);
 
@@ -124,7 +134,7 @@ const PropertyPageScreen = ({ navigation, route }) => {
   const confirmDelete = () =>
     Alert.alert('Delete property', 'Are you sure you want to delete this property?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => navigation.goBack() },
+      { text: 'Delete', style: 'destructive', onPress: () => navigation?.goBack() },
     ]);
 
   const onMenu = (label) => {
@@ -133,46 +143,43 @@ const PropertyPageScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Property</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <TrashIcon />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconGap}
-            onPress={() => Alert.alert('Edit', 'Edit property will open here.')}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            {ICONS.pencilSimple ? (
-              <Image source={ICONS.pencilSimple} style={styles.headerIcon} resizeMode="contain" />
-            ) : (
-              <Text style={styles.plusText}>✎</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconGap}
-            onPress={() => setMenuOpen((o) => !o)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.plusText}>+</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScreenHeader
+        title="Property"
+        onBack={() => navigation?.goBack()}
+        right={
+          <>
+            <TouchableOpacity
+              onPress={confirmDelete}
+              hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            >
+              <Image source={ICON.trash} style={styles.headerIcon} resizeMode="contain" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerGap}
+              onPress={() => Alert.alert('Edit', 'Edit property will open here.')}
+              hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            >
+              <Image source={ICON.pencil} style={styles.headerIcon} resizeMode="contain" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerGap}
+              onPress={() => setMenuOpen((o) => !o)}
+              hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            >
+              <Image
+                source={ICON.plus}
+                style={[styles.headerIcon, { tintColor: '#444444' }]}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </>
+        }
+      />
 
       <ScrollView
-        scrollEnabled={scrollEnabled}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         onScrollBeginDrag={() => setMenuOpen(false)}
@@ -200,126 +207,139 @@ const PropertyPageScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Thumbnails */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbs}>
+        {/* Thumbnails: 104 x 100, radius 8, selected = 2px orange border */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.thumbs}
+          style={styles.thumbsScroll}
+        >
           {images.map((img, i) => (
             <TouchableOpacity
               key={i}
               activeOpacity={0.85}
               onPress={() => goTo(i)}
-              style={[styles.thumb, i === active && styles.thumbActive]}
+              style={[styles.thumb, i === images.length - 1 && { marginRight: 0 }]}
             >
               <Image source={img} style={styles.thumbImage} />
+              {i === active ? <View pointerEvents="none" style={styles.thumbBorder} /> : null}
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Title */}
-        <View style={styles.block}>
+        {/* Title + address + views */}
+        <View style={styles.pad}>
           <Text style={styles.title}>{property.title ?? 'Kings Landing - House'}</Text>
-          <View style={styles.addressRow}>
-            <Text style={styles.address} numberOfLines={1}>
-              {property.address ?? '1012 Ocean avenue, New York, USA'}
-            </Text>
-            <Text style={styles.views}>0 Views  •  0 Saves</Text>
+          <Text style={styles.address}>
+            {property.address ?? '1012 Ocean avanue, New York, USA'}
+          </Text>
+          <View style={styles.viewsRow}>
+            <Text style={styles.views}>{property.views ?? 0} Views</Text>
+            <View style={styles.viewsDot} />
+            <Text style={styles.views}>{property.saves ?? 0} Save</Text>
           </View>
         </View>
 
-        {/* Facts */}
-        <View style={styles.facts}>
-          {facts.map((f, i) => (
-            <View key={`${f.label}-${i}`} style={styles.fact}>
-              <Text style={styles.factLabel} numberOfLines={1}>
-                {f.label}
-              </Text>
-              <Text style={styles.factValue} numberOfLines={1}>
-                {f.value}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.block}>
-          <Text style={styles.section}>Description</Text>
-          <Text style={styles.description}>{property.description || DEFAULT_DESCRIPTION}</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.block}>
-          <Text style={styles.section}>Features</Text>
-          <View style={styles.grid}>
-            {features.map((f) => (
-              <View key={f} style={styles.cell}>
-                <Checked label={f} />
+        {/* Tiles */}
+        <View style={[styles.pad, { marginTop: 21 }]}>
+          <View style={styles.tiles}>
+            {(property.columns ?? DEFAULT_COLUMNS).map((col, c) => (
+              <View key={c} style={{ width: COLUMN_WIDTHS[c] }}>
+                {col.map(([label, value], r) => (
+                  <Tile key={label} label={label} value={value} last={r === col.length - 1} />
+                ))}
               </View>
             ))}
           </View>
-        </View>
 
-        <View style={styles.divider} />
+          <Line bottom={15} />
 
-        <View style={styles.block}>
-          <Text style={styles.section}>Amenities</Text>
-          <View style={styles.grid}>
-            {amenities.map((f) => (
-              <View key={f} style={styles.cell}>
-                <Checked label={f} />
-              </View>
-            ))}
+          {/* Description */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Description</Text>
+            <Text style={styles.description}>{property.description || DEFAULT_DESCRIPTION}</Text>
           </View>
-        </View>
 
-        <View style={styles.divider} />
+          <Line bottom={15} />
 
-        <AroundThisHome />
-
-        <View style={styles.divider} />
-
-        {/* Schools */}
-        <View style={styles.block}>
-          <Text style={styles.section}>Schools</Text>
-          <Text style={styles.schoolsSubtitle}>Great Schools Summary Rating</Text>
-          {SCHOOLS.map((school) => (
-            <View key={school.name} style={styles.schoolRow}>
-              <Text style={styles.schoolRating}>{school.rating}</Text>
-              <View style={styles.schoolInfoCol}>
-                <Text style={styles.schoolName}>{school.name}</Text>
-                <Text style={styles.schoolInfo}>{school.info}</Text>
-              </View>
+          {/* Features */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Features</Text>
+            <View style={styles.chipRows}>
+              {(property.featureRows ?? DEFAULT_FEATURES).map((row, r) => (
+                <View key={r} style={[styles.chipRow, r > 0 && { marginTop: 10 }]}>
+                  {row.map((label, i) => (
+                    <View
+                      key={label}
+                      style={[styles.chipCell, i < row.length - 1 && styles.chipCellGap]}
+                    >
+                      <Chip label={label} />
+                    </View>
+                  ))}
+                </View>
+              ))}
             </View>
-          ))}
+          </View>
+
+          <Line bottom={15} />
+
+          {/* Amenities */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Amenities</Text>
+            <View style={styles.chipRows}>
+              {(property.amenityRows ?? DEFAULT_AMENITIES).map((row, r) => {
+                const tall = row.some(([, w]) => !!w);
+                return (
+                  <View key={r} style={[styles.chipRow, r > 0 && { marginTop: 10 }]}>
+                    {row.map(([label, w, cw], i) => (
+                      <View
+                        key={label}
+                        style={[
+                          cw ? { width: cw } : styles.chipCell,
+                          i < row.length - 1 && styles.chipCellGap,
+                        ]}
+                      >
+                        <Chip label={label} wrapWidth={w} tall={tall} />
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <Line bottom={23} />
+
+          <Text style={styles.cardTitle}>Location</Text>
+          <MapCard style={styles.locMap} onExpand={() => navigation?.navigate('MapViewScreen')} />
         </View>
-
-        <View style={styles.divider} />
-
-        <OpenHouses />
-
-        <View style={styles.divider} />
-
-        <PaymentEstimate onSliderInteract={(active) => setScrollEnabled(!active)} />
-
-        <ListingHistory />
-
-        <LocationSection onExpand={() => navigation.navigate('MapViewScreen')} />
       </ScrollView>
 
-      {/* "+" menu */}
-      {menuOpen && (
+      <BottomActionBar />
+
+      {/* "+" menu (Figma: 162 x 196, 5px below the header, right edge 14) */}
+      {menuOpen ? (
         <>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setMenuOpen(false)} />
-          <View style={styles.menu}>
-            {MENU.map((m) => (
-              <TouchableOpacity key={m.label} style={styles.menuItem} onPress={() => onMenu(m.label)}>
-                {m.icon ? <Image source={m.icon} style={styles.menuIcon} resizeMode="contain" /> : null}
-                <Text style={styles.menuText}>{m.label}</Text>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setMenuOpen(false)}
+          />
+          <View style={[styles.menu, { top: insets.top + 57 }]}>
+            {MENU.map((label) => (
+              <TouchableOpacity
+                key={label}
+                activeOpacity={0.7}
+                style={styles.menuItem}
+                onPress={() => onMenu(label)}
+              >
+                <Image source={ICON.plus} style={styles.menuIcon} resizeMode="contain" />
+                <Text style={styles.menuText}>{label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </>
-      )}
+      ) : null}
     </SafeAreaView>
   );
 };
@@ -327,131 +347,190 @@ const PropertyPageScreen = ({ navigation, route }) => {
 export default PropertyPageScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { paddingBottom: 21 },
+  pad: { paddingHorizontal: 15 },
 
-  header: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 14, color: TEXT },
-  headerIcons: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-  iconGap: { marginLeft: 14 },
-  headerIcon: { width: 16, height: 16, tintColor: TEXT },
-  plusText: { fontSize: 20, lineHeight: 22, color: TEXT, fontFamily: FONT.regular },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
-  },
-  trash: { width: 14, height: 16, alignItems: 'center' },
-  trashLid: { width: 14, height: 2, backgroundColor: TEXT, marginBottom: 1.5 },
-  trashBody: {
-    width: 10,
-    height: 11,
-    borderWidth: 1.5,
-    borderColor: TEXT,
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
-  },
+  /* header */
+  headerIcon: { width: 24, height: 24 },
+  headerGap: { marginLeft: 16 },
 
-  content: { paddingBottom: 30 },
-
+  /* hero */
   hero: { width: W, height: HERO_H },
   heroImage: { width: W, height: HERO_H, resizeMode: 'cover' },
-  dots: { position: 'absolute', bottom: 8, alignSelf: 'center', flexDirection: 'row' },
-  dot: { width: 5, height: 5, borderRadius: 3, marginHorizontal: 2 },
-  dotOn: { backgroundColor: ORANGE },
-  dotOff: { backgroundColor: '#FFFFFF' },
-
-  thumbs: { paddingHorizontal: 8, paddingTop: 8 },
-  thumb: {
-    width: THUMB_W,
-    height: THUMB_H,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    overflow: 'hidden',
-    marginRight: THUMB_GAP,
+  dots: {
+    position: 'absolute',
+    bottom: 11,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  thumbActive: { borderColor: ORANGE },
-  thumbImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  dot: { borderRadius: 5, marginHorizontal: 2 },
+  dotOn: { width: 9, height: 9, backgroundColor: ORANGE },
+  dotOff: { width: 7, height: 7, backgroundColor: '#FFFFFF' },
 
-  block: { paddingHorizontal: 16, marginTop: 12 },
-  title: { fontFamily: FONT.semibold, fontSize: 13, color: '#000000' },
-  addressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
-  address: { flex: 1, fontFamily: FONT.regular, fontSize: 8, color: '#6B6B6B' },
-  views: { fontFamily: FONT.regular, fontSize: 7, color: '#8A8A8A' },
+  /* thumbnails */
+  thumbsScroll: { marginTop: 18, flexGrow: 0 },
+  thumbs: { paddingHorizontal: 15 },
+  thumb: {
+    width: 104,
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginRight: 16,
+  },
+  thumbImage: { width: 104, height: 100, resizeMode: 'cover' },
+  thumbBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 2,
+    borderColor: ORANGE,
+    borderRadius: 8,
+  },
 
-  facts: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, marginTop: 14 },
-  fact: { width: '33.333%', marginBottom: 10, paddingRight: 6 },
-  factLabel: { fontFamily: FONT.regular, fontSize: 7, color: '#8A8A8A', marginBottom: 1 },
-  factValue: { fontFamily: FONT.medium, fontSize: 8.5, color: TEXT },
+  /* title block (natural line heights, offsets via margins) */
+  title: {
+    marginTop: 19.5,
+    fontFamily: FONT.semibold,
+    fontSize: 18,
+    lineHeight: 26,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  address: {
+    marginTop: 4.5,
+    marginLeft: 1,
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 17,
+    color: '#4E4E4E',
+    includeFontPadding: false,
+  },
+  viewsRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  views: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 17,
+    color: '#7A7A7A',
+    includeFontPadding: false,
+  },
+  viewsDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#7A7A7A',
+    marginHorizontal: 4,
+  },
 
-  divider: { height: 1, backgroundColor: '#ECECEC', marginHorizontal: 16, marginTop: 6 },
+  /* tiles */
+  tiles: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 8,
+  },
+  tile: {},
+  tileGap: { marginBottom: 15 },
+  tileLabel: {
+    fontFamily: FONT.medium,
+    fontSize: 10,
+    lineHeight: 15,
+    color: '#7A7A7A',
+    includeFontPadding: false,
+  },
+  tileValue: {
+    marginTop: 2,
+    fontFamily: FONT.medium,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#000000',
+    includeFontPadding: false,
+  },
 
-  section: { fontFamily: FONT.semibold, fontSize: 11, color: TEXT, marginBottom: 8 },
-  description: { fontFamily: FONT.regular, fontSize: 9, lineHeight: 14, color: '#6B6B6B' },
+  locMap: { marginTop: 10 },
+  line: { height: 1, backgroundColor: '#DFDFDF', marginTop: 16 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: '33.333%', marginBottom: 12, paddingRight: 4 },
-  checkedItem: { flexDirection: 'row', alignItems: 'center' },
-  checkedCircle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  /* cards */
+  card: { padding: 8, borderRadius: 8 },
+  cardTitle: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#303131',
+    includeFontPadding: false,
+  },
+  description: {
+    marginTop: 12,
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#3D3D3D',
+    includeFontPadding: false,
+  },
+
+  /* chips */
+  chipRows: { marginTop: 12 },
+  chipRow: { flexDirection: 'row', alignItems: 'center' },
+  chipCell: { flex: 1 },
+  chipCellGap: { marginRight: 8 },
+  chip: {
+    height: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  chipTall: { minHeight: 46 },
+  chipCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: ORANGE,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
+    marginRight: 12,
   },
-  checkedTick: { color: '#FFFFFF', fontSize: 8, lineHeight: 10, fontWeight: '700' },
-  checkedLabel: { flex: 1, fontFamily: FONT.regular, fontSize: 8, color: TEXT },
-
-  mapBox: { height: 120, borderRadius: 10, overflow: 'hidden', backgroundColor: '#EAEAEA', marginTop: 2 },
-  mapImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  mapExpand: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+  chipCheck: { width: 12.5, height: 12.5, tintColor: '#FFFFFF' },
+  chipLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#5B5B5B',
+    includeFontPadding: false,
   },
-  mapExpandText: { fontSize: 11, color: TEXT },
 
-  schoolsSubtitle: { fontFamily: FONT.regular, fontSize: 9, color: '#6B6B6B', marginTop: -4, marginBottom: 12 },
-  schoolRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  schoolRating: { width: 36, fontFamily: FONT.medium, fontSize: 10, color: TEXT },
-  schoolInfoCol: { flex: 1 },
-  schoolName: { fontFamily: FONT.medium, fontSize: 10, color: TEXT },
-  schoolInfo: { fontFamily: FONT.regular, fontSize: 8, color: '#8A8A8A', marginTop: 1 },
-
+  /* "+" menu */
   menu: {
     position: 'absolute',
-    top: 52,
-    right: 16,
-    width: 130,
+    right: 14,
+    width: 162,
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    paddingVertical: 4,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 14,
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
   },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, paddingHorizontal: 12 },
-  menuIcon: { width: 12, height: 12, marginRight: 8, tintColor: TEXT },
-  menuText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
+  menuItem: {
+    height: 49,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EAEAEA',
+  },
+  menuIcon: { width: 17, height: 17, marginRight: 8, tintColor: '#404040' },
+  menuText: {
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#404040',
+    includeFontPadding: false,
+  },
 });
