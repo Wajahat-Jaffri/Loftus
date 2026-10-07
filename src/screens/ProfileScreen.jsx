@@ -5,16 +5,18 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   StatusBar,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
+import ScreenHeader from '../components/ScreenHeader';
 import { ICONS, IMAGES } from '../assets';
 
 const ORANGE = '#FF6C40';
-const TEXT = '#1C1C1C';
-const BORDER = '#E6E6E6';
+const RED = '#E62626';
+const BORDER = '#E9E9E9';
+const INK = '#111827';
 
 const FONT = {
   regular: 'Poppins-Regular',
@@ -27,7 +29,7 @@ const PROPERTY_MANAGEMENT = [
   { label: 'Properties', icon: ICONS.buildingOffice, route: 'Properties' },
   { label: 'Listings', icon: ICONS.listBullets, route: 'Listings' },
   { label: 'Favorites', icon: ICONS.heartLine, route: 'FavoritesScreen' },
-  { label: 'Payments', icon: ICONS.money, route: 'PaymentsScreen' },
+  { label: 'Payments', icon: ICONS.cardholder, route: 'PaymentsScreen' },
   { label: 'Offers', icon: ICONS.moneyWavy, route: 'Offers' },
   { label: 'Leases', icon: ICONS.lease, route: 'Leases' },
   { label: 'Service Staff', icon: ICONS.serviceStaff, route: 'ServiceStaff' },
@@ -37,23 +39,39 @@ const PROPERTY_MANAGEMENT = [
 const ACCOUNT_SETTINGS = [
   { label: 'Service Profile', icon: ICONS.briefcase, route: 'ServiceProfile' },
   { label: 'Analytics', icon: ICONS.chartLineUp, route: 'Analytics' },
-  { label: 'Payment Methods', icon: ICONS.cardholder, route: 'PaymentMethods' },
+  { label: 'Payment Methods', icon: ICONS.money, route: 'PaymentMethods' },
 ];
+
+const Chevron = () => (
+  <View style={styles.chevBox}>
+    <View style={styles.chev} />
+  </View>
+);
 
 const MenuGroup = ({ items, onPress }) => (
   <View style={styles.group}>
-    {items.map((item, index) => (
-      <TouchableOpacity
-        key={item.label}
-        activeOpacity={0.7}
-        style={[styles.row, index !== items.length - 1 && styles.rowDivider]}
-        onPress={() => onPress(item)}
-      >
-        <Image source={item.icon} style={styles.rowIcon} resizeMode="contain" />
-        <Text style={styles.rowLabel}>{item.label}</Text>
-        <View style={styles.chevron} />
-      </TouchableOpacity>
-    ))}
+    {items.map((item, index) => {
+      const first = index === 0;
+      const last = index === items.length - 1;
+      return (
+        <TouchableOpacity
+          key={item.label}
+          activeOpacity={0.7}
+          style={[
+            styles.row,
+            first && styles.rowFirst,
+            last && styles.rowLast,
+          ]}
+          onPress={() => onPress(item)}
+        >
+          <View style={styles.rowLeft}>
+            <Image source={item.icon} style={styles.rowIcon} resizeMode="contain" />
+            <Text style={styles.rowLabel}>{item.label}</Text>
+          </View>
+          <Chevron />
+        </TouchableOpacity>
+      );
+    })}
   </View>
 );
 
@@ -71,39 +89,41 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.navigate('EditProfileScreen')}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Image source={ICONS.notePencil} style={styles.editIcon} resizeMode="contain" />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Profile"
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity
+            style={styles.headerRight}
+            onPress={() => navigation.navigate('EditProfileScreen')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Image source={ICONS.notePencil} style={styles.headerIcon} resizeMode="contain" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* User card: 343 x 164, padding 16, gap 32 */}
         <View style={styles.userCard}>
           <Image source={IMAGES.profile} style={styles.avatar} />
-          <Text style={styles.userName}>Jerry Helfer</Text>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>Jerry Helfer</Text>
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Property Management</Text>
-        <MenuGroup items={PROPERTY_MANAGEMENT} onPress={handleItemPress} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Property Management</Text>
+          <MenuGroup items={PROPERTY_MANAGEMENT} onPress={handleItemPress} />
+        </View>
 
-        <Text style={styles.sectionTitle}>Account Settings</Text>
-        <MenuGroup items={ACCOUNT_SETTINGS} onPress={handleItemPress} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Settings</Text>
+          <MenuGroup items={ACCOUNT_SETTINGS} onPress={handleItemPress} />
+        </View>
 
         <TouchableOpacity style={styles.signOutBtn} activeOpacity={0.8} onPress={handleSignOut}>
           <Image source={ICONS.signOut} style={styles.signOutIcon} resizeMode="contain" />
@@ -111,7 +131,7 @@ const ProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      <BottomNav active="Profile" navigation={navigation} />
+      <BottomNav active="" navigation={navigation} />
     </SafeAreaView>
   );
 };
@@ -120,75 +140,98 @@ export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 15, color: TEXT },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
-  },
-  editIcon: { width: 22, height: 22 },
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
+
+  headerRight: { position: 'relative', top: 1, right: 1 },
+  headerIcon: { width: 24, height: 24 },
+
+  scrollContent: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 41 },
+
   userCard: {
+    height: 164,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: BORDER,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    marginTop: 8,
+    borderRadius: 12,
+    padding: 15,
   },
-  avatar: { width: 72, height: 72, borderRadius: 36 },
+  avatar: { width: 132, height: 132, borderRadius: 66 },
+  userInfo: { flex: 1, marginLeft: 32 },
   userName: {
-    flex: 1,
-    textAlign: 'center',
     fontFamily: FONT.semi,
-    fontSize: 15,
-    color: TEXT,
-    marginRight: 72,
+    fontSize: 20,
+    lineHeight: 30,
+    color: '#000000',
+    includeFontPadding: false,
   },
+
+  section: { marginTop: 16 },
   sectionTitle: {
-    fontFamily: FONT.semi,
-    fontSize: 14,
-    color: TEXT,
-    marginTop: 20,
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#000000',
     marginBottom: 10,
+    includeFontPadding: false,
   },
-  group: { borderWidth: 1, borderColor: BORDER, borderRadius: 10, backgroundColor: '#FFFFFF' },
-  row: { height: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
-  rowDivider: { borderBottomWidth: 1, borderBottomColor: BORDER },
-  rowIcon: { width: 18, height: 18, marginRight: 12 },
-  rowLabel: { flex: 1, fontFamily: FONT.regular, fontSize: 12, color: TEXT },
-  chevron: {
+
+  group: { width: 343 },
+  row: {
+    height: 53,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: '#FFFFFF',
+  },
+  rowFirst: { borderTopWidth: 1, borderTopLeftRadius: 8, borderTopRightRadius: 8 },
+  rowLast: { borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
+  rowLeft: { flexDirection: 'row', alignItems: 'center' },
+  rowIcon: { width: 20, height: 20, marginRight: 8, tintColor: INK },
+  rowLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: INK,
+    includeFontPadding: false,
+  },
+
+  // ChevronRight 20 x 20: arrow is 6 wide x 10 tall, centred
+  chevBox: { width: 20, height: 20 },
+  chev: {
+    position: 'absolute',
+    left: 4.5,
+    top: 6.5,
     width: 7,
     height: 7,
-    borderRightWidth: 1.5,
     borderTopWidth: 1.5,
-    borderColor: TEXT,
+    borderRightWidth: 1.5,
+    borderColor: INK,
     transform: [{ rotate: '45deg' }],
   },
+
   signOutBtn: {
-    height: 44,
-    borderRadius: 22,
+    width: 345,
+    height: 50,
+    alignSelf: 'center',
+    marginTop: 41,
+    borderRadius: 50,
     borderWidth: 1,
-    borderColor: ORANGE,
+    borderColor: '#E52626',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 28,
   },
-  signOutIcon: { width: 18, height: 18, marginRight: 8 },
-  signOutText: { fontFamily: FONT.medium, fontSize: 13, color: ORANGE },
+  signOutIcon: { width: 20, height: 20, marginRight: 10, tintColor: RED },
+  signOutText: {
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: RED,
+    includeFontPadding: false,
+  },
 });

@@ -32,7 +32,7 @@ const NavItem = ({ tab, isActive, onPress }) => (
         resizeMode="contain"
       />
     )}
-    <Text style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}>
+    <Text style={[styles.label, isActive && !tab.avatar ? styles.labelActive : styles.labelInactive]}>
       {tab.label}
     </Text>
   </TouchableOpacity>

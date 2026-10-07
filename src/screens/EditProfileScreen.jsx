@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   Image,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Modal,
-  Pressable,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,21 +11,30 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomNav from '../components/BottomNav';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { Field, SelectField, PrimaryButton } from '../components/FormControls';
+import BottomNav from '../components/BottomNav';
+import ScreenHeader from '../components/ScreenHeader';
+import {
+  SectionTitle,
+  ProfileField,
+  ProfileSelect,
+  SaveButton,
+  SegmentedTabs,
+  EditAvatarCard,
+} from '../components/ProfileParts';
+import { UpdateModal, PhotoSheet } from '../components/ProfileModals';
 import { ICONS, IMAGES } from '../assets';
 
-const ORANGE = '#FF6C40';
-const TEXT = '#1C1C1C';
-const LIGHT = '#C4C4C4';
-const BORDER = '#E6E6E6';
-
-const FONT = {
-  regular: 'Poppins-Regular',
-  medium: 'Poppins-Medium',
-  semi: 'Poppins-SemiBold',
-};
+// Vertical stack with a fixed gap (works on every RN version, no rowGap needed)
+const Stack = ({ gap, children }) => (
+  <View style={styles.stack}>
+    {React.Children.toArray(children).map((c, i) => (
+      <View key={i} style={{ marginTop: i === 0 ? 0 : gap }}>
+        {c}
+      </View>
+    ))}
+  </View>
+);
 
 const TABS = ['Account Details', 'Change Password', 'Security Questions'];
 
@@ -44,148 +49,45 @@ const SECURITY_QUESTIONS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Avatar card (centered on Account Details, side-by-side on others)   */
-/* ------------------------------------------------------------------ */
-const AvatarCard = ({ compact, photo, onPressEdit }) => (
-  <View style={[styles.avatarCard, compact && styles.avatarCardCompact]}>
-    <View>
-      <Image source={photo || IMAGES.profile} style={styles.avatar} />
-      <TouchableOpacity style={styles.avatarBadge} onPress={onPressEdit} activeOpacity={0.8}>
-        <Image source={ICONS.pencilSimple} style={styles.avatarBadgeIcon} resizeMode="contain" />
-      </TouchableOpacity>
-    </View>
-    {compact && (
-      <View style={styles.avatarInfo}>
-        <Text style={styles.avatarName}>Jerry Helfer</Text>
-        <Text style={styles.avatarRole}>Landlord</Text>
-      </View>
-    )}
-  </View>
-);
-
-/* ------------------------------------------------------------------ */
-/* Tabs                                                                */
-/* ------------------------------------------------------------------ */
-const TabBar = ({ active, onChange }) => (
-  <View style={styles.tabBar}>
-    {TABS.map((t) => (
-      <TouchableOpacity key={t} style={[styles.tab, active === t && styles.tabActive]} onPress={() => onChange(t)}>
-        <Text style={[styles.tabText, active === t && styles.tabTextActive]}>{t}</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-);
-
-/* ------------------------------------------------------------------ */
-/* Update Email / Phone modal                                          */
-/* ------------------------------------------------------------------ */
-const UpdateModal = ({ visible, title, description, placeholder, icon, keyboardType, onCancel, onSubmit }) => {
-  const [value, setValue] = useState('');
-
-  const close = () => {
-    setValue('');
-    onCancel();
-  };
-
-  const submit = () => {
-    if (!value.trim()) {
-      Alert.alert('Required', `Please enter your ${placeholder.toLowerCase()}.`);
-      return;
-    }
-    onSubmit(value.trim());
-    setValue('');
-  };
-
-  return (
-    <Modal visible={visible} transparent statusBarTranslucent animationType="fade" onRequestClose={close}>
-      <Pressable style={styles.modalOverlay} onPress={close}>
-        <Pressable style={styles.modalCard} onPress={() => {}}>
-          <Text style={styles.modalTitle}>{title}</Text>
-          <Text style={styles.modalDesc}>{description}</Text>
-
-          <View style={styles.modalInput}>
-            <Image source={icon} style={styles.modalInputIcon} resizeMode="contain" />
-            <TextInput
-              style={styles.modalInputText}
-              value={value}
-              onChangeText={setValue}
-              placeholder={placeholder}
-              placeholderTextColor={LIGHT}
-              keyboardType={keyboardType}
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.modalBtns}>
-            <TouchableOpacity style={[styles.modalBtn, styles.modalBtnOutline]} onPress={close}>
-              <Text style={[styles.modalBtnText, { color: ORANGE }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.modalBtn, styles.modalBtnFilled]} onPress={submit}>
-              <Text style={[styles.modalBtnText, { color: '#FFFFFF' }]}>Submit</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Upload photo bottom sheet                                           */
-/* ------------------------------------------------------------------ */
-const PhotoSheet = ({ visible, onClose, onTakePhoto, onChoosePhoto }) => (
-  <Modal visible={visible} transparent statusBarTranslucent animationType="slide" onRequestClose={onClose}>
-    <Pressable style={styles.sheetOverlay} onPress={onClose}>
-      <Pressable style={styles.sheet} onPress={() => {}}>
-        <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>Upload your photo</Text>
-
-        <TouchableOpacity style={styles.sheetRow} onPress={onTakePhoto}>
-          <View style={styles.cameraGlyph}>
-            <View style={styles.cameraLens} />
-          </View>
-          <Text style={styles.sheetRowText}>Take Photo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.sheetRow} onPress={onChoosePhoto}>
-          <View style={styles.galleryGlyph}>
-            <View style={styles.galleryDot} />
-          </View>
-          <Text style={styles.sheetRowText}>Choose from Library</Text>
-        </TouchableOpacity>
-      </Pressable>
-    </Pressable>
-  </Modal>
-);
-
-/* ------------------------------------------------------------------ */
 /* Tab contents                                                        */
 /* ------------------------------------------------------------------ */
 const AccountDetails = ({ form, setField, onEditEmail, onEditPhone }) => (
   <View>
-    <Text style={styles.sectionTitle}>Basic Details</Text>
-    <Field label="First Name" value={form.firstName} onChangeText={(v) => setField('firstName', v)} />
-    <Field label="Middle Name" value={form.middleName} onChangeText={(v) => setField('middleName', v)} />
-    <Field label="Last name" value={form.lastName} onChangeText={(v) => setField('lastName', v)} />
-    <Field label="Email" value={form.email} readOnly rightText="Edit" onRightPress={onEditEmail} />
-    <Field label="Phone Number" value={form.phone} readOnly rightText="Edit" onRightPress={onEditPhone} />
-    <Field
-      label="Date of birth"
-      value={form.dob}
-      onChangeText={(v) => setField('dob', v)}
-      placeholder="DD/MM/YYYY"
-      keyboardType="numbers-and-punctuation"
-      rightIcon={<Image source={ICONS.calendar} style={styles.calIcon} resizeMode="contain" />}
-    />
+    <SectionTitle>Basic Details</SectionTitle>
+    <Stack gap={8}>
+      <ProfileField label="First Name" value={form.firstName} onChangeText={(v) => setField('firstName', v)} />
+      <ProfileField label="Middle Name" value={form.middleName} onChangeText={(v) => setField('middleName', v)} />
+      <ProfileField label="Last name" value={form.lastName} onChangeText={(v) => setField('lastName', v)} />
+      <ProfileField label="Email" value={form.email} readOnly rightText="Edit" onRightPress={onEditEmail} />
+      <ProfileField label="Phone Number" value={form.phone} readOnly rightText="Edit" onRightPress={onEditPhone} />
+      <ProfileField
+        label="Date of birth"
+        value={form.dob}
+        onChangeText={(v) => setField('dob', v)}
+        placeholder="DD/MM/YYYY"
+        keyboardType="numbers-and-punctuation"
+        rightIcon={<Image source={ICONS.calendar} style={styles.calIcon} resizeMode="contain" />}
+      />
+    </Stack>
 
-    <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Further Details</Text>
-    <Field label="Address Line 1" value={form.address1} onChangeText={(v) => setField('address1', v)} />
-    <Field label="Address Line 2" value={form.address2} onChangeText={(v) => setField('address2', v)} />
-    <SelectField label="Country" value={form.country} options={COUNTRIES} onSelect={(v) => setField('country', v)} />
-    <SelectField label="State" value={form.state} options={STATES} onSelect={(v) => setField('state', v)} />
-    <Field label="City" value={form.city} onChangeText={(v) => setField('city', v)} />
-    <Field label="Zipcode" value={form.zip} onChangeText={(v) => setField('zip', v)} keyboardType="number-pad" />
-    <Field label="Profile Bio" value={form.bio} onChangeText={(v) => setField('bio', v)} multiline />
+    <SectionTitle style={styles.furtherTitle}>Further Details</SectionTitle>
+    <Stack gap={8}>
+      <ProfileField
+        label="Address Line 1"
+        value={form.address1}
+        onChangeText={(v) => setField('address1', v)}
+      />
+      <ProfileField
+        label="Address Line 2"
+        value={form.address2}
+        onChangeText={(v) => setField('address2', v)}
+      />
+      <ProfileSelect label="Country" value={form.country} options={COUNTRIES} onSelect={(v) => setField('country', v)} />
+      <ProfileSelect label="State" value={form.state} options={STATES} onSelect={(v) => setField('state', v)} />
+      <ProfileField label="City" value={form.city} onChangeText={(v) => setField('city', v)} />
+      <ProfileField label="Zipcode" value={form.zip} onChangeText={(v) => setField('zip', v)} keyboardType="number-pad" />
+      <ProfileField label="Profile Bio" value={form.bio} onChangeText={(v) => setField('bio', v)} multiline />
+    </Stack>
   </View>
 );
 
@@ -207,11 +109,13 @@ const ChangePassword = () => {
 
   return (
     <View>
-      <Text style={styles.sectionTitle}>Change Your Password</Text>
-      <Field label="Old Password" value={oldPass} onChangeText={setOldPass} secureTextEntry autoCapitalize="none" />
-      <Field label="New Password" value={newPass} onChangeText={setNewPass} secureTextEntry autoCapitalize="none" />
-      <Field label="Confirm Password" value={confirmPass} onChangeText={setConfirmPass} secureTextEntry autoCapitalize="none" />
-      <PrimaryButton title="Save" onPress={save} />
+      <SectionTitle>Change Your Password</SectionTitle>
+      <Stack gap={4}>
+        <ProfileField label="Old Password" value={oldPass} onChangeText={setOldPass} secureTextEntry autoCapitalize="none" />
+        <ProfileField label="New Password" value={newPass} onChangeText={setNewPass} secureTextEntry autoCapitalize="none" />
+        <ProfileField label="Confirm Password" value={confirmPass} onChangeText={setConfirmPass} secureTextEntry autoCapitalize="none" />
+      </Stack>
+      <SaveButton title="Save" onPress={save} style={{ marginTop: 50 }} />
     </View>
   );
 };
@@ -239,20 +143,21 @@ const SecurityQuestions = () => {
 
   return (
     <View>
-      <Text style={styles.sectionTitle}>Security Questions</Text>
-      {items.map((it, i) => (
-        <View key={i}>
-          <SelectField
+      <SectionTitle>Security Questions</SectionTitle>
+      <Stack gap={10}>
+        {items.flatMap((it, i) => [
+          <ProfileSelect
+            key={`q${i}`}
             label="Select Question"
             placeholder="Select"
             value={it.q}
             options={SECURITY_QUESTIONS}
             onSelect={(v) => update(i, 'q', v)}
-          />
-          <Field label="Answer" value={it.a} onChangeText={(v) => update(i, 'a', v)} />
-        </View>
-      ))}
-      <PrimaryButton title="Save" onPress={save} />
+          />,
+          <ProfileField key={`a${i}`} label="Answer" value={it.a} onChangeText={(v) => update(i, 'a', v)} />,
+        ])}
+      </Stack>
+      <SaveButton title="Save" onPress={save} style={{ marginTop: 24 }} />
     </View>
   );
 };
@@ -311,27 +216,22 @@ const EditProfileScreen = ({ navigation }) => {
   const handleChoosePhoto = () => pickPhoto(launchImageLibrary);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={saveProfile}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Image source={ICONS.floppy} style={styles.saveIcon} resizeMode="contain" />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Edit Profile"
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity
+            style={styles.headerRight}
+            onPress={saveProfile}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Image source={ICONS.floppy} style={styles.headerIcon} resizeMode="contain" />
+          </TouchableOpacity>
+        }
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -339,23 +239,32 @@ const EditProfileScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
-          <AvatarCard compact={activeTab !== 'Account Details'} photo={photo} onPressEdit={() => setShowSheet(true)} />
-          <TabBar active={activeTab} onChange={setActiveTab} />
+          <EditAvatarCard
+            compact={activeTab !== 'Account Details'}
+            source={photo || IMAGES.profile}
+            onPressEdit={() => setShowSheet(true)}
+          />
 
-          {activeTab === 'Account Details' && (
-            <AccountDetails
-              form={form}
-              setField={setField}
-              onEditEmail={() => setShowEmailModal(true)}
-              onEditPhone={() => setShowPhoneModal(true)}
-            />
-          )}
-          {activeTab === 'Change Password' && <ChangePassword />}
-          {activeTab === 'Security Questions' && <SecurityQuestions />}
+          <View style={styles.tabsWrap}>
+            <SegmentedTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+          </View>
+
+          <View style={styles.body}>
+            {activeTab === 'Account Details' && (
+              <AccountDetails
+                form={form}
+                setField={setField}
+                onEditEmail={() => setShowEmailModal(true)}
+                onEditPhone={() => setShowPhoneModal(true)}
+              />
+            )}
+            {activeTab === 'Change Password' && <ChangePassword />}
+            {activeTab === 'Security Questions' && <SecurityQuestions />}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <BottomNav active="Profile" navigation={navigation} />
+      <BottomNav active="" navigation={navigation} />
 
       <UpdateModal
         visible={showEmailModal}
@@ -398,104 +307,18 @@ export default EditProfileScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
 
-  header: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 15, color: TEXT },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
-  },
+  headerRight: { position: 'relative', top: 0, right: 1 },
+  headerIcon: { width: 24, height: 24 },
 
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  // header ends at 52 -> card top at 67 (Figma 111 - 44)
+  scrollContent: { paddingTop: 15, paddingHorizontal: 16, paddingBottom: 43 },
+  // card ends 231 -> segmented control at 254
+  tabsWrap: { marginTop: 23 },
+  // segmented control ends 304 -> first section at 325
+  body: { marginTop: 21 },
 
-  avatarCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginTop: 8,
-  },
-  avatarCardCompact: { flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: 12 },
-  avatar: { width: 72, height: 72, borderRadius: 36 },
-  avatarBadge: {
-    position: 'absolute',
-    right: -2,
-    bottom: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: ORANGE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarBadgeIcon: { width: 12, height: 12 },
-  avatarInfo: { flex: 1, alignItems: 'center', marginRight: 72 },
-  avatarName: { fontFamily: FONT.semi, fontSize: 14, color: TEXT },
-  avatarRole: { fontFamily: FONT.regular, fontSize: 10, color: TEXT, marginTop: 2 },
+  stack: { marginTop: 10 },
+  furtherTitle: { marginTop: 16 },
 
-  tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER, marginTop: 14, marginBottom: 14 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: ORANGE },
-  tabText: { fontFamily: FONT.regular, fontSize: 9, color: TEXT },
-  tabTextActive: { fontFamily: FONT.medium, color: ORANGE },
-
-  calIcon: { width: 18, height: 18, marginLeft: 8 },
-  saveIcon: { width: 22, height: 22 },
-  sectionTitle: { fontFamily: FONT.semi, fontSize: 12, color: TEXT, marginBottom: 10 },
-
-  // Update email / phone modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: 20 },
-  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 },
-  modalTitle: { fontFamily: FONT.semi, fontSize: 14, color: TEXT },
-  modalDesc: { fontFamily: FONT.regular, fontSize: 10, color: TEXT, marginTop: 6, marginBottom: 14, lineHeight: 15 },
-  modalInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 40,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-  },
-  modalInputIcon: { width: 16, height: 16, marginRight: 8, tintColor: LIGHT },
-  modalInputText: { flex: 1, fontFamily: FONT.regular, fontSize: 11, color: TEXT, paddingVertical: 0 },
-  modalBtns: { flexDirection: 'row', marginTop: 16 },
-  modalBtn: { flex: 1, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  modalBtnOutline: { borderWidth: 1, borderColor: ORANGE, marginRight: 8 },
-  modalBtnFilled: { backgroundColor: ORANGE, marginLeft: 8 },
-  modalBtnText: { fontFamily: FONT.medium, fontSize: 12 },
-
-  // Photo sheet
-  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 28,
-    paddingTop: 8,
-  },
-  sheetHandle: { alignSelf: 'center', width: 32, height: 3, borderRadius: 2, backgroundColor: '#C8C8C8', marginBottom: 14 },
-  sheetTitle: { fontFamily: FONT.medium, fontSize: 12, color: TEXT, textAlign: 'center', marginBottom: 14 },
-  sheetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  sheetRowText: { fontFamily: FONT.regular, fontSize: 12, color: TEXT, marginLeft: 12 },
-  cameraGlyph: { width: 18, height: 13, borderWidth: 1.4, borderColor: TEXT, borderRadius: 3, alignItems: 'center', justifyContent: 'center' },
-  cameraLens: { width: 6, height: 6, borderRadius: 3, borderWidth: 1.3, borderColor: TEXT },
-  galleryGlyph: { width: 18, height: 14, borderWidth: 1.4, borderColor: TEXT, borderRadius: 3 },
-  galleryDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: TEXT, margin: 2 },
+  calIcon: { width: 24, height: 24, marginLeft: 8 },
 });
