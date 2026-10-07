@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
+import ScreenHeader from '../components/ScreenHeader';
 import FavoriteCard from '../components/FavoriteCard';
 import { useFavorites } from '../context/FavoritesContext';
 
@@ -21,20 +22,10 @@ const FavoritesScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Favorites</Text>
-        <View style={styles.headerBtn} />
-      </View>
+      <ScreenHeader title="Favorites" onBack={() => navigation.goBack()} />
 
       <FlatList
         data={favorites}
@@ -42,6 +33,7 @@ const FavoritesScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <FavoriteCard item={item} onToggleFavorite={toggleFavorite} onPress={openProperty} />
         )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.listContent, favorites.length === 0 && { flexGrow: 1 }]}
         ListEmptyComponent={
@@ -64,25 +56,9 @@ export default FavoritesScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 15, color: TEXT },
-  backArrow: {
-    width: 10,
-    height: 10,
-    borderLeftWidth: 1.8,
-    borderBottomWidth: 1.8,
-    borderColor: TEXT,
-    transform: [{ rotate: '45deg' }],
-    marginLeft: 4,
-  },
-  listContent: { paddingTop: 12, paddingBottom: 12 },
+  // header ends at 52 -> first card at 76 (Figma 120 - 44); last card 40px above navbar
+  listContent: { paddingTop: 24, paddingBottom: 40 },
+  separator: { height: 16 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
   emptyHeart: { fontSize: 44, color: '#FF6C40', marginBottom: 8 },
   emptyTitle: { fontFamily: FONT.semibold, fontSize: 15, color: TEXT, marginBottom: 4 },

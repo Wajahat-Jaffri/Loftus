@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, Image, FlatList, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { ICONS } from '../assets';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 32;
-const SLIDE_WIDTH = CARD_WIDTH - 2; // minus the 1px border on each side
-const IMAGE_HEIGHT = Math.round(SLIDE_WIDTH * 0.62);
-
 const ORANGE = '#FF6C40';
+
+// Figma card: 345 x 343 (15px screen margin), border 0 1 1 1.
+const CARD_WIDTH = width - 30;
+const SLIDE_WIDTH = CARD_WIDTH - 2;
+const IMAGE_HEIGHT = 224;
+
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
@@ -21,138 +30,279 @@ const Feature = ({ icon, label }) => (
   </View>
 );
 
-/** One property card for the Favorites screen (swipeable photos, filled heart to remove). */
-const FavoriteCard = ({ item, onToggleFavorite, onPress }) => {
-  const images = item.images && item.images.length ? item.images : [item.image].filter(Boolean);
-  const [active, setActive] = useState(0);
+const Divider = () => <View style={styles.divider} />;
 
-  const onMomentumEnd = (e) => {
-    setActive(Math.round(e.nativeEvent.contentOffset.x / SLIDE_WIDTH));
-  };
+/**
+ * Favorites card (same layout as the Explore PropertyCard, single property).
+ * Props: item, onToggleFavorite(item), onPress(item).
+ * Heart is always filled orange here (it is a favorite); tapping removes it.
+ */
+const FavoriteCard = ({ item, onToggleFavorite, onPress }) => {
+  // Only the first image is decoded (same as the Explore card) to keep the screen light.
+  const image = item.images?.[0] ?? item.image;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.imageWrapper}>
-        <FlatList
-          data={images}
-          keyExtractor={(_, i) => String(i)}
-          horizontal
-          pagingEnabled
-          bounces={false}
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={onMomentumEnd}
-          renderItem={({ item: img }) => (
-            <TouchableOpacity activeOpacity={0.9} onPress={() => onPress && onPress(item)}>
-              <Image source={img} style={styles.image} />
-            </TouchableOpacity>
-          )}
-        />
+    <View style={styles.cardContainer}>
+      <View style={styles.slide}>
+        {/* Picture frame 345 x 224 */}
+        <View style={styles.imageWrapper}>
+          <TouchableOpacity activeOpacity={0.95} onPress={() => onPress?.(item)}>
+            <Image source={image} style={styles.image} resizeMethod="resize" />
+          </TouchableOpacity>
 
-        <View style={styles.offersBadge} pointerEvents="none">
-          <Text style={styles.offersText}>{item.offers != null ? item.offers : 3} Offers</Text>
-        </View>
+          <View style={styles.offersBadge}>
+            <Text style={styles.offersBadgeText}>{item.offers ?? 3} Offers</Text>
+          </View>
 
-        <TouchableOpacity
-          style={styles.heartBtn}
-          activeOpacity={0.8}
-          onPress={() => onToggleFavorite(item)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Image source={ICONS.heartFilled} style={styles.heartFilled} resizeMode="contain" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            activeOpacity={0.8}
+            onPress={() => onToggleFavorite?.(item)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Image
+              source={ICONS.heartFilled || ICONS.heart}
+              style={[styles.favoriteIcon, { tintColor: ORANGE }]}
+            />
+          </TouchableOpacity>
 
-        {images.length > 1 && (
-          <View style={styles.dots} pointerEvents="none">
-            {images.map((_, i) => (
-              <View key={i} style={[styles.dot, i === active ? styles.dotActive : styles.dotInactive]} />
+          <View style={styles.paginationContainer} pointerEvents="none">
+            {[0, 1, 2].map((index) => (
+              <View
+                key={index}
+                style={[styles.paginationDot, index === 0 ? styles.activeDot : styles.inactiveDot]}
+              />
             ))}
           </View>
-        )}
-      </View>
-
-      <TouchableOpacity style={styles.details} activeOpacity={0.85} onPress={() => onPress && onPress(item)}>
-        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-
-        <View style={styles.featuresRow}>
-          <Feature icon={ICONS.bed} label={item.beds} />
-          <View style={styles.divider} />
-          <Feature icon={ICONS.bath} label={item.baths} />
-          <View style={styles.divider} />
-          <Feature icon={ICONS.area} label={item.sqft} />
         </View>
 
-        <Text style={styles.address} numberOfLines={1}>{item.address}</Text>
-
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>{item.price}</Text>
-          <View style={styles.timeRow}>
-            <Image source={ICONS.clock} style={styles.clock} resizeMode="contain" />
-            <Text style={styles.timeText}>{item.timeAgo}</Text>
+        {/* Info block 329 x 103 */}
+        <TouchableOpacity style={styles.cardDetails} activeOpacity={0.85} onPress={() => onPress?.(item)}>
+          <View style={styles.titleBox}>
+            <Text style={styles.propertyTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
           </View>
-        </View>
-      </TouchableOpacity>
+
+          <View style={styles.featuresRow}>
+            <Feature icon={ICONS.bedroom || ICONS.bed} label={item.beds} />
+            <Divider />
+            <Feature icon={ICONS.bath} label={item.baths} />
+            <Divider />
+            <Feature icon={ICONS.bed} label={item.sqft} />
+          </View>
+
+          <View style={styles.addressBox}>
+            <Text style={styles.addressText} numberOfLines={1}>
+              {item.address}
+            </Text>
+          </View>
+
+          <View style={styles.priceBox}>
+            <Text style={styles.priceText}>{item.price}</Text>
+          </View>
+
+          <View style={styles.timeAgoContainer}>
+            <Image source={ICONS.clock} style={styles.clockIcon} resizeMode="contain" />
+            <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
-export default FavoriteCard;
-
 const styles = StyleSheet.create({
-  card: {
+  cardContainer: {
     width: CARD_WIDTH,
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EDEDED',
-    marginBottom: 16,
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(133,135,138,0.3)',
     overflow: 'hidden',
   },
-  imageWrapper: { width: SLIDE_WIDTH, height: IMAGE_HEIGHT },
+  list: {
+    width: SLIDE_WIDTH,
+    flexGrow: 0,
+  },
   image: { width: SLIDE_WIDTH, height: IMAGE_HEIGHT, resizeMode: 'cover' },
+  slide: {
+    width: SLIDE_WIDTH,
+    backgroundColor: '#FFFFFF',
+    paddingBottom: 8,
+  },
+  imageWrapper: {
+    height: IMAGE_HEIGHT,
+    width: SLIDE_WIDTH,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
+  },
+  propertyImage: {
+    width: SLIDE_WIDTH,
+    height: IMAGE_HEIGHT,
+    resizeMode: 'cover',
+  },
   offersBadge: {
     position: 'absolute',
-    top: 10,
-    left: 10,
+    top: 11,
+    left: 17,
+    height: 23,
+    paddingHorizontal: 8,
+    borderRadius: 50,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
-  offersText: { fontFamily: FONT.medium, fontSize: 10, color: '#1A1A1A' },
-  heartBtn: {
+  offersBadgeText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  favoriteButton: {
     position: 'absolute',
-    top: 6,
-    right: 10,
+    top: 11,
+    right: 17,
     width: 32,
     height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  favoriteIcon: {
+    width: 32,
+    height: 32,
+    tintColor: '#FFFFFF',
+    resizeMode: 'contain',
+  },
+  paginationContainer: {
+    position: 'absolute',
+    top: IMAGE_HEIGHT - 11 - 9,
+    left: 0,
+    right: 0,
+    height: 9,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heartFilled: { width: 24, height: 24 },
-  dots: {
-    position: 'absolute',
-    bottom: 8,
-    alignSelf: 'center',
+  paginationDot: {
+    marginHorizontal: 2,
+  },
+  activeDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: ORANGE,
+  },
+  inactiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#FFFFFF',
+  },
+
+  // Info block: 329 x 103, 8px below the image
+  cardDetails: {
+    height: 103,
+    marginTop: 8,
+    marginHorizontal: 7,
+  },
+  titleBox: {
+    marginTop: -4,
+    marginBottom: 7,
+  },
+  propertyTitle: {
+    fontFamily: FONT.semibold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  featuresRow: {
+    height: 16,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dot: { width: 5, height: 5, borderRadius: 3, marginHorizontal: 2 },
-  dotActive: { backgroundColor: ORANGE },
-  dotInactive: { backgroundColor: '#FFFFFF' },
-
-  details: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 },
-  title: { fontFamily: FONT.semibold, fontSize: 14, color: '#000000', marginBottom: 6 },
-  featuresRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  featureItem: { flexDirection: 'row', alignItems: 'center' },
-  featureIcon: { width: 12, height: 12, tintColor: '#8A8A8A', marginRight: 4 },
-  featureText: { fontFamily: FONT.regular, fontSize: 9, color: '#6B6B6B' },
-  divider: { width: 1, height: 10, backgroundColor: '#D1D1D1', marginHorizontal: 8 },
-  address: { fontFamily: FONT.regular, fontSize: 9, color: '#6B6B6B', marginBottom: 8 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontFamily: FONT.semibold, fontSize: 18, color: ORANGE },
-  timeRow: { flexDirection: 'row', alignItems: 'center' },
-  clock: { width: 11, height: 11, tintColor: ORANGE, marginRight: 4 },
-  timeText: { fontFamily: FONT.regular, fontSize: 9, color: '#8A8A8A' },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featureIcon: {
+    width: 16,
+    height: 16,
+    tintColor: ORANGE,
+    marginRight: 2,
+  },
+  featureText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#4E4E4E',
+    includeFontPadding: false,
+  },
+  divider: {
+    width: 0.5,
+    height: 9,
+    backgroundColor: '#4E4E4E',
+    opacity: 0.5,
+    marginHorizontal: 5,
+  },
+  addressBox: {
+    height: 18,
+    marginTop: 10,
+    justifyContent: 'center',
+  },
+  addressText: {
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    includeFontPadding: false,
+  },
+  priceBox: {
+    position: 'absolute',
+    left: 0,
+    top: 74.5,
+  },
+  priceText: {
+    fontFamily: FONT.semibold,
+    fontSize: 22,
+    lineHeight: 30,
+    color: ORANGE,
+    includeFontPadding: false,
+  },
+  timeAgoContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: -2,
+    height: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clockIcon: {
+    width: 14,
+    height: 14,
+    tintColor: ORANGE,
+    marginRight: 2,
+  },
+  timeAgoText: {
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    opacity: 0.5,
+    includeFontPadding: false,
+  },
 });
+
+export default FavoriteCard;
