@@ -5,20 +5,18 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
-  TextInput,
-  TouchableOpacity,
   Pressable,
   StatusBar,
   Platform,
 } from 'react-native';
 import BottomNav from '../components/BottomNav';
-import { ICONS, IMAGES } from '../assets';
+import ScreenHeader from '../components/ScreenHeader';
+import SearchRow from '../components/SearchRow';
+import { IMAGES } from '../assets';
 
 const ORANGE = '#FF6C40';
-const GREY = '#9E9E9E';
 
 const FONT = {
-  regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
   semibold: 'Poppins-SemiBold',
 };
@@ -59,51 +57,18 @@ const MapViewScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation?.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backChevron}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Search</Text>
-        <View style={styles.headerSpacer} />
+      <ScreenHeader title="Search" onBack={() => navigation?.goBack()} />
+
+      {/* Search + filter (Figma top 108) */}
+      <View style={styles.searchWrap}>
+        <SearchRow
+          value={query}
+          onChangeText={setQuery}
+          onPressFilter={() => navigation?.navigate('Filters')}
+        />
       </View>
 
-      {/* Search + filter */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchInputContainer}>
-          <Image
-            source={ICONS.search}
-            style={styles.searchIcon}
-            resizeMode="contain"
-          />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search by Address, City, or ZIP"
-            placeholderTextColor={GREY}
-            style={styles.searchInput}
-            returnKeyType="search"
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.filterButton}
-          activeOpacity={0.7}
-          onPress={() => navigation?.navigate('Filters')}
-        >
-          <View style={styles.filterLinesContainer}>
-            <View style={[styles.filterLine, { width: 20 }]} />
-            <View style={[styles.filterLine, { width: 14 }]} />
-            <View style={[styles.filterLine, { width: 8 }]} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Map */}
+      {/* Map frame: 345 x 573, radius 12, Figma top 168 */}
       <View
         style={styles.mapWrapper}
         onLayout={(e) => {
@@ -112,10 +77,7 @@ const MapViewScreen = ({ navigation }) => {
         }}
       >
         {/* Tap the map background to close the tooltip */}
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={() => setSelectedPin(null)}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setSelectedPin(null)}>
           {IMAGES.map ? (
             <Image source={IMAGES.map} style={styles.mapImage} />
           ) : (
@@ -169,88 +131,15 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    height: 44,
+  // 52 header -> 12 gap -> search row (44) -> 16 gap -> map
+  searchWrap: {
+    marginTop: 12,
   },
-  backButton: {
-    width: 24,
-  },
-  backChevron: {
-    fontSize: 30,
-    lineHeight: 34,
-    color: '#1A1A1A',
-    fontWeight: '300',
-  },
-  headerTitle: {
-    fontFamily: FONT.medium,
-    fontSize: 16,
-    color: '#1A1A1A',
-  },
-  headerSpacer: {
-    width: 24,
-  },
-
-  // Search
-  searchSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 14,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-    borderRadius: 22,
-    height: 40,
-    paddingHorizontal: 14,
-    marginRight: 14,
-  },
-  searchIcon: {
-    width: 16,
-    height: 16,
-    tintColor: GREY,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: FONT.regular,
-    fontSize: 11,
-    color: '#1A1A1A',
-    paddingVertical: 0,
-  },
-  filterButton: {
-    width: 26,
-    height: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterLinesContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterLine: {
-    height: 2,
-    backgroundColor: ORANGE,
-    borderRadius: 1,
-    marginVertical: 2,
-  },
-
-  // Map
   mapWrapper: {
-    flex: 1,
-    marginHorizontal: 20,
-    marginBottom: 14,
-    borderRadius: 14,
+    height: MAP_H,
+    marginTop: 16,
+    marginHorizontal: 15,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#E8EEF2',
   },

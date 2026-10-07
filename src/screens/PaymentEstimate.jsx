@@ -2,7 +2,6 @@ import React, { useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, PanResponder, TouchableOpacity } from 'react-native';
 
 const ORANGE = '#FF6C40';
-const TEXT_DARK = '#1A1A1A';
 
 const FONT = {
   regular: 'Poppins-Regular',
@@ -15,13 +14,13 @@ const RATE_MIN = 2;
 const RATE_MAX = 8;
 const RATE_STEP = 0.25;
 
-// Monthly costs other than principal & interest (matches the Figma legend).
+// Monthly costs other than principal & interest (colors from the Figma legend).
 const FIXED_COSTS = [
   { key: 'hoa', label: 'HOA Dues', amount: 100, color: '#F5A623' },
-  { key: 'condo', label: 'Condo Dues', amount: 150, color: '#C957F2' },
-  { key: 'tax', label: 'Property Taxes', amount: 83, color: '#4DDDC5' },
-  { key: 'ins', label: "Homeowner's Insurance", amount: 69, color: '#FF5A5F' },
-  { key: 'pmi', label: 'Mortgage Insurance', amount: 43, color: '#7BC843' },
+  { key: 'condo', label: 'Condo Dues', amount: 150, color: '#E056FD' },
+  { key: 'tax', label: 'Property Taxes', amount: 83, color: '#50E3C2' },
+  { key: 'ins', label: 'Homeowner\u2019s Insurance', amount: 69, color: '#FF5C5C' },
+  { key: 'pmi', label: 'Mortgage Insurance', amount: 43, color: '#7ED321' },
 ];
 const PI_COLOR = '#4A90E2';
 
@@ -41,7 +40,7 @@ const monthlyPrincipalInterest = (loan, ratePercent, years) => {
 const BAR_COUNT = 144;
 const START_ANGLE = -80;
 
-const Donut = ({ segments, size = 192, thickness = 17, children }) => {
+const Donut = ({ segments, size = 200, thickness = 18, children }) => {
   const bars = useMemo(() => {
     const total = segments.reduce((s, x) => s + x.value, 0) || 1;
     const counts = segments.map((seg) =>
@@ -105,8 +104,8 @@ const Donut = ({ segments, size = 192, thickness = 17, children }) => {
 /* ------------------------------------------------------------------ */
 /* Single-thumb slider (interest rate)                                 */
 /* ------------------------------------------------------------------ */
-const THUMB = 22;
-const TRACK_H = 6;
+const THUMB = 21;
+const TRACK_H = 12;
 
 const SingleSlider = ({ min, max, value, step, onChange, onInteract }) => {
   const [width, setWidth] = useState(0);
@@ -233,6 +232,7 @@ const PaymentEstimate = ({
       </View>
 
       {/* Loan term */}
+      <View style={styles.termBlock}>
       <Text style={styles.fieldTitle}>Loan Term</Text>
       <View style={styles.termRow}>
         {LOAN_TERMS.map((t) => {
@@ -242,7 +242,11 @@ const PaymentEstimate = ({
               key={t}
               activeOpacity={0.85}
               onPress={() => setTerm(t)}
-              style={[styles.termChip, selected && styles.termChipSelected]}
+              style={[
+                styles.termChip,
+                selected && styles.termChipSelected,
+                t === LOAN_TERMS[LOAN_TERMS.length - 1] && { marginRight: 0 },
+              ]}
             >
               <Text style={[styles.termText, selected && styles.termTextSelected]}>
                 {t} years
@@ -250,6 +254,7 @@ const PaymentEstimate = ({
             </TouchableOpacity>
           );
         })}
+      </View>
       </View>
 
       {/* Interest rate */}
@@ -274,21 +279,23 @@ const PaymentEstimate = ({
 };
 
 const styles = StyleSheet.create({
+  // Card: padding 8, gap 32 between blocks (Figma frame 345 x 821)
   wrapper: {
-    paddingHorizontal: 20,
-    marginTop: 22,
+    padding: 8,
   },
   title: {
-    fontFamily: FONT.semibold,
+    marginBottom: 32,
+    fontFamily: FONT.medium,
     fontSize: 14,
-    color: TEXT_DARK,
-    marginBottom: 16,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
 
-  // Donut
+  // Donut 200 x 200
   donutWrap: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 32,
   },
   donutCenter: {
     position: 'absolute',
@@ -301,155 +308,174 @@ const styles = StyleSheet.create({
   },
   donutTotal: {
     fontFamily: FONT.medium,
-    fontSize: 30,
-    color: TEXT_DARK,
+    fontSize: 32,
+    lineHeight: 44,
+    color: '#202020',
+    includeFontPadding: false,
   },
   donutSub: {
-    fontFamily: FONT.regular,
-    fontSize: 13,
-    color: '#6B6B6B',
-    marginTop: -4,
+    marginTop: -6,
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#7A7A7A',
+    includeFontPadding: false,
   },
 
-  // Legend
+  // Legend: rows 21 high, gap 12, dot 14 + gap 8
   legend: {
-    marginBottom: 16,
+    marginBottom: 20, // + 12 from the last row = 32
   },
   legendRow: {
+    height: 21,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 12,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 8,
   },
   legendLabel: {
     flex: 1,
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
   legendAmount: {
     fontFamily: FONT.medium,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
 
-  // Summary
+  // Summary: 3 rows, gap 12
   summary: {
-    marginTop: 4,
-    marginBottom: 18,
+    marginBottom: 20, // + 12 from the last row = 32
   },
   summaryRow: {
+    height: 21,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   summaryLabel: {
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
   summaryValue: {
-    fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
 
-  // Loan term
+  // Loan term: chips 74.75 x 44, gap 10
   fieldTitle: {
     fontFamily: FONT.regular,
-    fontSize: 12,
-    color: TEXT_DARK,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  termBlock: {
+    marginBottom: 32,
   },
   termRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 10,
-    marginBottom: 20,
+    flexDirection: 'row',
   },
   termChip: {
-    width: '23%',
+    flex: 1,
+    height: 44,
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 40,
     borderRadius: 8,
-    backgroundColor: '#F3F3F3',
+    backgroundColor: '#F3F4F6',
   },
   termChipSelected: {
     backgroundColor: ORANGE,
   },
   termText: {
-    fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
+    fontFamily: FONT.medium,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4B5563',
+    includeFontPadding: false,
   },
   termTextSelected: {
-    fontFamily: FONT.medium,
     color: '#FFFFFF',
   },
 
-  // Interest rate
+  // Interest rate: header 21, slider 27 (track 12), scale labels 18
   rateHeader: {
+    height: 21,
+    marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
   rateValue: {
-    fontFamily: FONT.medium,
-    fontSize: 12,
+    fontFamily: FONT.semibold,
+    fontSize: 14,
+    lineHeight: 21,
     color: ORANGE,
+    includeFontPadding: false,
   },
   rateScale: {
+    height: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 2,
   },
   rateScaleText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#8A8A8A',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4B5563',
+    includeFontPadding: false,
   },
 
   // Slider
   sliderContainer: {
-    height: THUMB + 8,
-    justifyContent: 'center',
+    height: 27,
   },
   sliderTrack: {
     position: 'absolute',
     left: 0,
     right: 0,
+    top: 8,
     height: TRACK_H,
-    borderRadius: TRACK_H / 2,
-    backgroundColor: '#EFEFEF',
+    borderRadius: 50,
+    backgroundColor: '#F3F4F6',
   },
   sliderFill: {
     position: 'absolute',
     left: 0,
+    top: 8,
     height: TRACK_H,
-    borderRadius: TRACK_H / 2,
+    borderRadius: 50,
     backgroundColor: ORANGE,
   },
   sliderThumb: {
     position: 'absolute',
-    top: 4,
+    top: 3,
     width: THUMB,
     height: THUMB,
     borderRadius: THUMB / 2,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: ORANGE,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
   },
 });
 

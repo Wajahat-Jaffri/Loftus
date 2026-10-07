@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
-import { GALLERY_SECTIONS, GALLERY_PHOTOS } from '../constants/galleryData';
+import ScreenHeader from '../components/ScreenHeader';
+import { GALLERY_SECTIONS } from '../constants/galleryData';
 
-const ORANGE = '#FF6C40';
 const { width: W } = Dimensions.get('window');
 
 const FONT = {
@@ -21,12 +21,10 @@ const FONT = {
   semibold: 'Poppins-SemiBold',
 };
 
-const GAP = 3;
-const BIG_H = Math.round(W * 0.56);
+const GAP = 8; // gap between photos
+const BIG_H = 244; // first photo of each room: 375 x 244
+const ROW_H = 127; // photos in the pairs: 127 high
 const HALF_W = (W - GAP) / 2;
-const ROW_H = Math.round(HALF_W * 0.72);
-const GRID_H = Math.round(HALF_W * 0.8);
-const TOP_THUMB_W = Math.round((W - 40 - 20) / 3);
 
 const chunk = (arr, n) => {
   const out = [];
@@ -34,10 +32,18 @@ const chunk = (arr, n) => {
   return out;
 };
 
+// Small dark badge ("Bed 1", "Bath 2") shown on bedroom / bathroom photos.
+const badgeFor = (section, i) => {
+  const key = String(section.key || '').toLowerCase();
+  if (key.includes('bed')) return `Bed ${i + 1}`;
+  if (key.includes('bath')) return `Bath ${i + 1}`;
+  return null;
+};
+
 const GalleryViewScreen = ({ navigation, route }) => {
   const property = route?.params?.property;
   const title = property?.title ?? 'Kings Landing - House';
-  const address = property?.address ?? '100 Ocean avenue, New York, USA';
+  const address = property?.address ?? '1012 Ocean avanue, New York, USA';
 
   const scrollRef = useRef(null);
   const sectionY = useRef({});
@@ -56,90 +62,97 @@ const GalleryViewScreen = ({ navigation, route }) => {
     navigation?.navigate('GalleryPhotoScreen', { index: start + indexInSection });
   };
 
-  const Photo = ({ section, i, style }) => (
-    <TouchableOpacity activeOpacity={0.9} onPress={() => openPhoto(section, i)} style={style}>
-      <Image source={section.images[i]} style={styles.fill} />
-    </TouchableOpacity>
-  );
+  const renderPhoto = (section, i, style) => {
+    const badge = badgeFor(section, i);
+    return (
+      <TouchableOpacity
+        key={i}
+        activeOpacity={0.9}
+        onPress={() => openPhoto(section, i)}
+        style={style}
+      >
+        <Image source={section.images[i]} style={styles.fill} />
+        {badge ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge}</Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation?.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backIcon}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Gallery View</Text>
-      </View>
+      <ScreenHeader title="Gallery View" onBack={() => navigation?.goBack()} />
 
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
-        {/* Property name + room shortcuts */}
+        {/* Title + address (Figma top 112) */}
         <View style={styles.intro}>
-          <Text style={styles.propertyTitle}>{title}</Text>
-          <Text style={styles.propertyAddress}>{address}</Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.roomsRow}
-          >
-            {GALLERY_SECTIONS.map((s) => (
-              <TouchableOpacity
-                key={s.key}
-                activeOpacity={0.85}
-                style={styles.roomItem}
-                onPress={() => scrollToSection(s.key)}
-              >
-                <Image source={s.images[0]} style={styles.roomThumb} />
-                <Text style={styles.roomLabel} numberOfLines={1}>
-                  {s.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <Text style={styles.propertyTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <Text style={styles.propertyAddress} numberOfLines={1}>
+            {address}
+          </Text>
         </View>
 
+        {/* Room shortcuts (Figma top 166): thumbs 136 x 130, gap 16 */}
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.roomsScroll}
+          contentContainerStyle={styles.roomsRow}
+        >
+          {GALLERY_SECTIONS.map((s, i) => (
+            <TouchableOpacity
+              key={s.key}
+              activeOpacity={0.85}
+              style={[styles.roomItem, i < GALLERY_SECTIONS.length - 1 && { marginRight: 16 }]}
+              onPress={() => scrollToSection(s.key)}
+            >
+              <Image source={s.images[0]} style={styles.roomThumb} />
+              <Text style={styles.roomLabel} numberOfLines={1}>
+                {s.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.divider} />
+
         {/* Sections */}
-        {GALLERY_SECTIONS.map((section) => {
+        {GALLERY_SECTIONS.map((section, sIndex) => {
           const rest = section.images.slice(1).map((_, k) => k + 1);
           const rows = chunk(rest, 2);
-          const isGrid = section.images.length > 4; // kitchen = 2 x 2 grid
           return (
             <View
               key={section.key}
+              style={sIndex === 0 ? styles.firstSection : styles.section}
               onLayout={(e) => {
                 sectionY.current[section.key] = e.nativeEvent.layout.y;
               }}
             >
               <Text style={styles.sectionTitle}>{section.title}</Text>
 
-              <Photo section={section} i={0} style={{ width: W, height: BIG_H }} />
+              {renderPhoto(section, 0, { width: W, height: BIG_H })}
 
               {rows.map((row, r) => (
                 <View key={r} style={[styles.row, { marginTop: GAP }]}>
-                  {row.map((idx, c) => (
-                    <Photo
-                      key={idx}
-                      section={section}
-                      i={idx}
-                      style={{
-                        width: HALF_W,
-                        height: isGrid ? GRID_H : ROW_H,
-                        marginLeft: c === 0 ? 0 : GAP,
-                      }}
-                    />
-                  ))}
+                  {row.map((idx, c) =>
+                    renderPhoto(section, idx, {
+                      width: row.length === 1 ? HALF_W : HALF_W,
+                      height: ROW_H,
+                      marginLeft: c === 0 ? 0 : GAP,
+                    })
+                  )}
                 </View>
               ))}
             </View>
           );
         })}
 
-        <View style={{ height: 16 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
 
       <BottomNav active="" navigation={navigation} />
@@ -151,66 +164,97 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   fill: { width: '100%', height: '100%', resizeMode: 'cover' },
 
-  header: {
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+  // header ends at Figma 96, title block at 112 (height 38)
+  intro: {
+    height: 38,
+    marginTop: 16,
+    marginHorizontal: 15,
   },
-  backButton: {
-    position: 'absolute',
-    left: 16,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  },
-  backIcon: {
-    fontSize: 30,
-    lineHeight: 32,
-    color: '#1A1A1A',
-    fontFamily: FONT.regular,
-  },
-  headerTitle: {
-    fontFamily: FONT.medium,
-    fontSize: 14,
-    color: '#1A1A1A',
-  },
-
-  intro: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 6 },
   propertyTitle: {
+    marginTop: -4,
     fontFamily: FONT.semibold,
-    fontSize: 16,
-    color: '#1A1A1A',
+    fontSize: 18,
+    lineHeight: 24,
+    color: '#000000',
+    includeFontPadding: false,
   },
   propertyAddress: {
+    marginTop: 7,
+    marginLeft: 1,
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#8A8A8A',
-    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#4E4E4E',
+    includeFontPadding: false,
   },
-  roomsRow: { paddingTop: 12 },
-  roomItem: { width: TOP_THUMB_W, marginRight: 10 },
+
+  // title block ends at 150, rooms at 166
+  roomsScroll: {
+    flexGrow: 0,
+    marginTop: 16,
+  },
+  roomsRow: {
+    paddingLeft: 15,
+    paddingRight: 15,
+  },
+  roomItem: { width: 136, height: 161 },
   roomThumb: {
-    width: TOP_THUMB_W,
-    height: Math.round(TOP_THUMB_W * 0.62),
-    borderRadius: 6,
+    width: 136,
+    height: 130,
+    borderRadius: 8,
     resizeMode: 'cover',
   },
   roomLabel: {
+    marginTop: 10,
+    height: 21,
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#1A1A1A',
-    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#3D3D3D',
+    includeFontPadding: false,
   },
 
+  // rooms end at 327, divider at 351
+  divider: {
+    height: 1,
+    marginTop: 24,
+    marginHorizontal: 15,
+    backgroundColor: '#DFDFDF',
+  },
+
+  // divider ends 352, first section at 374; later sections 48 apart
+  firstSection: { marginTop: 22 },
+  section: { marginTop: 48 },
   sectionTitle: {
-    fontFamily: FONT.semibold,
-    fontSize: 16,
-    color: '#1A1A1A',
-    paddingHorizontal: 20,
-    marginTop: 22,
-    marginBottom: 10,
+    marginTop: -4.5,
+    marginBottom: 20,
+    marginLeft: 15,
+    fontFamily: FONT.medium,
+    fontSize: 20,
+    lineHeight: 28,
+    color: '#000000',
+    includeFontPadding: false,
   },
   row: { flexDirection: 'row' },
+
+  badge: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    height: 18,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    backgroundColor: '#303030',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontFamily: FONT.medium,
+    fontSize: 10,
+    lineHeight: 14,
+    color: '#DCDCDC',
+    includeFontPadding: false,
+  },
 });
 
 export default GalleryViewScreen;

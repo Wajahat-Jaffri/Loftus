@@ -5,7 +5,6 @@ import { ICONS } from '../assets';
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
-  semibold: 'Poppins-SemiBold',
 };
 
 const DEFAULT_ADDRESS =
@@ -17,25 +16,34 @@ const DEFAULT_SCORES = [
   { key: 'transit', icon: ICONS.transit, score: 25, label: 'Transit Score®', note: 'Minimal Transit' },
 ];
 
-/** "Around this Home" — walk / bike / transit scores. */
+/**
+ * "Around this Home": Figma frame 353 x 158 (padding 13 / 8, gap 10),
+ * three 105 x 86 score cards with gap 8.
+ */
 const AroundThisHome = ({ address = DEFAULT_ADDRESS, scores = DEFAULT_SCORES }) => (
   <View style={styles.wrapper}>
-    <Text style={styles.title}>Around this Home</Text>
-    <Text style={styles.subtitle}>{address}</Text>
+    <View style={styles.header}>
+      <Text style={styles.title}>Around this Home</Text>
+      <Text style={styles.subtitle} numberOfLines={1}>
+        {address}
+      </Text>
+    </View>
 
     <View style={styles.row}>
       {scores.map((s) => (
         <View key={s.key} style={styles.card}>
           <Image source={s.icon} style={styles.icon} resizeMode="contain" />
-          <View style={styles.scoreRow}>
-            <Text style={styles.score}>{s.score}</Text>
-            <Text style={styles.scoreLabel} numberOfLines={1}>
-              {s.label}
+          <View style={styles.textBlock}>
+            <View style={styles.scoreRow}>
+              <Text style={styles.score}>{s.score}</Text>
+              <Text style={styles.scoreLabel} numberOfLines={1}>
+                {s.label}
+              </Text>
+            </View>
+            <Text style={styles.note} numberOfLines={1}>
+              {s.note}
             </Text>
           </View>
-          <Text style={styles.note} numberOfLines={1}>
-            {s.note}
-          </Text>
         </View>
       ))}
     </View>
@@ -44,62 +52,78 @@ const AroundThisHome = ({ address = DEFAULT_ADDRESS, scores = DEFAULT_SCORES }) 
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: 20,
-    marginTop: 22,
+    paddingVertical: 13,
+    paddingHorizontal: 4,
+  },
+  header: {
+    marginBottom: 10,
   },
   title: {
     fontFamily: FONT.medium,
     fontSize: 14,
-    color: '#1A1A1A',
-    marginBottom: 4,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
   },
   subtitle: {
+    marginTop: 5,
     fontFamily: FONT.regular,
-    fontSize: 9,
-    color: '#8A8A8A',
-    marginBottom: 12,
+    fontSize: 10,
+    lineHeight: 15,
+    color: '#686868',
+    includeFontPadding: false,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   card: {
-    width: '31.5%',
+    width: 105,
+    height: 86,
+    marginRight: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#EEEEEE',
+    borderColor: '#F4F4F4',
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
   },
   icon: {
-    width: 26,
-    height: 26,
-    marginBottom: 8,
+    width: 32,
+    height: 32,
+    marginBottom: 4,
+  },
+  textBlock: {
+    width: 93,
   },
   scoreRow: {
+    height: 21,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   score: {
-    fontFamily: FONT.semibold,
-    fontSize: 15,
-    lineHeight: 18,
-    color: '#1A1A1A',
-    marginRight: 3,
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#000000',
+    marginRight: 6,
+    includeFontPadding: false,
   },
   scoreLabel: {
     flex: 1,
+    marginTop: 3,
     fontFamily: FONT.regular,
-    fontSize: 8,
-    color: '#1A1A1A',
-    marginBottom: 2,
+    fontSize: 10,
+    lineHeight: 15,
+    color: '#000000',
+    includeFontPadding: false,
   },
   note: {
     fontFamily: FONT.regular,
-    fontSize: 8,
-    color: '#8A8A8A',
-    marginTop: 4,
+    fontSize: 10,
+    lineHeight: 15,
+    color: '#686868',
+    includeFontPadding: false,
   },
 });
 

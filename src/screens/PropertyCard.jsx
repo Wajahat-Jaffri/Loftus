@@ -12,10 +12,12 @@ import { ICONS } from '../assets';
 import { useFavorites } from '../context/FavoritesContext';
 
 const { width } = Dimensions.get('window');
-// 20px screen padding on each side, minus 1px border on each side of the card.
-const CARD_WIDTH = width - 40;
+const ORANGE = '#FF6C40';
+
+// Figma card: 345 wide (15px screen margin), border 0 1 1 1.
+const CARD_WIDTH = width - 30;
 const SLIDE_WIDTH = CARD_WIDTH - 2;
-const IMAGE_HEIGHT = 215;
+const IMAGE_HEIGHT = 224;
 
 // Auto-slide every N milliseconds (restarts after the user swipes).
 const AUTO_SLIDE_MS = 3500;
@@ -33,11 +35,12 @@ const Feature = ({ icon, label }) => (
   </View>
 );
 
+const Divider = () => <View style={styles.divider} />;
+
 /**
  * One card, one horizontal slider.
  * - Swipe left/right to change slide (paged).
  * - Auto-advances every AUTO_SLIDE_MS and loops back to the first slide.
- * - Auto-slide pauses while the user is dragging and restarts after.
  */
 const PropertyCard = ({
   items = [],
@@ -49,9 +52,7 @@ const PropertyCard = ({
   const listRef = useRef(null);
   const indexRef = useRef(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  // Bumped after a manual swipe so the auto-slide timer restarts from zero.
   const [timerKey, setTimerKey] = useState(0);
-  // Favorites are shared by the whole app (see FavoritesContext).
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const goTo = useCallback((index, animated = true) => {
@@ -63,7 +64,6 @@ const PropertyCard = ({
     });
   }, []);
 
-  // Auto-slide
   useEffect(() => {
     if (!autoSlide || items.length < 2) return undefined;
     const id = setInterval(() => {
@@ -73,7 +73,6 @@ const PropertyCard = ({
     return () => clearInterval(id);
   }, [autoSlide, autoSlideMs, items.length, timerKey, goTo]);
 
-  // Keep dots in sync while swiping.
   const handleScroll = (event) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / SLIDE_WIDTH);
     if (index !== indexRef.current && index >= 0 && index < items.length) {
@@ -82,7 +81,6 @@ const PropertyCard = ({
     }
   };
 
-  // User finished a swipe -> restart the auto-slide countdown.
   const handleMomentumEnd = (event) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / SLIDE_WIDTH);
     indexRef.current = clampIndex(index, items.length);
@@ -91,7 +89,6 @@ const PropertyCard = ({
   };
 
   const handleHeartPress = (item) => {
-    // The context stores the whole property so the Favorites screen can show it.
     toggleFavorite(item);
     onToggleFavorite?.(item);
   };
@@ -102,7 +99,7 @@ const PropertyCard = ({
 
     return (
       <View style={styles.slide}>
-        {/* Image */}
+        {/* Picture frame 345 x 224 */}
         <View style={styles.imageWrapper}>
           <Image source={image} style={styles.propertyImage} />
 
@@ -118,43 +115,44 @@ const PropertyCard = ({
           >
             <Image
               source={liked && ICONS.heartFilled ? ICONS.heartFilled : ICONS.heart}
-              style={[styles.favoriteIcon, liked && { tintColor: '#FF6C40' }]}
+              style={[styles.favoriteIcon, liked && { tintColor: ORANGE }]}
             />
           </TouchableOpacity>
         </View>
 
-        {/* Details of this slide's property */}
+        {/* Info block 329 x 103 */}
         <TouchableOpacity
           style={styles.cardDetails}
           activeOpacity={0.85}
           onPress={() => onPressItem?.(item)}
         >
-          <Text style={styles.propertyTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
+          <View style={styles.titleBox}>
+            <Text style={styles.propertyTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+          </View>
 
           <View style={styles.featuresRow}>
-            <Feature icon={ICONS.bed} label={item.beds} />
-            <View style={styles.divider} />
+            <Feature icon={ICONS.bedroom || ICONS.bed} label={item.beds} />
+            <Divider />
             <Feature icon={ICONS.bath} label={item.baths} />
-            <View style={styles.divider} />
+            <Divider />
             <Feature icon={ICONS.bed} label={item.sqft} />
           </View>
 
-          <Text style={styles.addressText} numberOfLines={1}>
-            {item.address}
-          </Text>
+          <View style={styles.addressBox}>
+            <Text style={styles.addressText} numberOfLines={1}>
+              {item.address}
+            </Text>
+          </View>
 
-          <View style={styles.priceRow}>
+          <View style={styles.priceBox}>
             <Text style={styles.priceText}>{item.price}</Text>
-            <View style={styles.timeAgoContainer}>
-              <Image
-                source={ICONS.clock}
-                style={styles.clockIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
-            </View>
+          </View>
+
+          <View style={styles.timeAgoContainer}>
+            <Image source={ICONS.clock} style={styles.clockIcon} resizeMode="contain" />
+            <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -188,7 +186,7 @@ const PropertyCard = ({
         style={styles.list}
       />
 
-      {/* Pagination dots — one set for the whole slider, over the image area */}
+      {/* Pagination dots: 9px active + 7px inactive, gap 4, 11px above image bottom */}
       <View style={styles.paginationContainer} pointerEvents="none">
         {items.map((item, index) => (
           <View
@@ -211,9 +209,12 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EDEDED',
-    marginBottom: 18,
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(133,135,138,0.3)',
+    marginBottom: 16,
     overflow: 'hidden',
   },
   list: {
@@ -223,10 +224,14 @@ const styles = StyleSheet.create({
   slide: {
     width: SLIDE_WIDTH,
     backgroundColor: '#FFFFFF',
+    paddingBottom: 8,
   },
   imageWrapper: {
     height: IMAGE_HEIGHT,
     width: SLIDE_WIDTH,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
   },
   propertyImage: {
     width: SLIDE_WIDTH,
@@ -235,120 +240,159 @@ const styles = StyleSheet.create({
   },
   offersBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 11,
+    left: 17,
+    height: 23,
+    paddingHorizontal: 8,
+    borderRadius: 50,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   offersBadgeText: {
     fontFamily: FONT.medium,
     fontSize: 11,
-    color: '#1A1A1A',
+    lineHeight: 16,
+    color: '#000000',
+    includeFontPadding: false,
   },
   favoriteButton: {
     position: 'absolute',
-    top: 10,
-    right: 12,
+    top: 11,
+    right: 17,
     width: 32,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   favoriteIcon: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
   paginationContainer: {
     position: 'absolute',
-    // sits on the bottom edge of the image, fixed while slides move
-    top: IMAGE_HEIGHT - 16,
-    alignSelf: 'center',
+    top: IMAGE_HEIGHT - 11 - 9,
+    left: 0,
+    right: 0,
+    height: 9,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   paginationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 2.5,
+    marginHorizontal: 2,
   },
   activeDot: {
-    backgroundColor: '#FF6C40',
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: ORANGE,
   },
   inactiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: '#FFFFFF',
   },
+
+  // Info block: 329 x 103, 8px below the image
   cardDetails: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 12,
+    height: 103,
+    marginTop: 8,
+    marginHorizontal: 7,
+  },
+  titleBox: {
+    marginTop: -4,
+    marginBottom: 7,
   },
   propertyTitle: {
     fontFamily: FONT.semibold,
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 22,
     color: '#000000',
-    marginBottom: 6,
+    includeFontPadding: false,
   },
   featuresRow: {
+    height: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   featureIcon: {
-    width: 13,
-    height: 13,
-    tintColor: '#8A8A8A',
-    marginRight: 4,
+    width: 16,
+    height: 16,
+    tintColor: ORANGE,
+    marginRight: 2,
   },
   featureText: {
-    fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#4E4E4E',
+    includeFontPadding: false,
   },
   divider: {
-    width: 1,
-    height: 11,
-    backgroundColor: '#D1D1D1',
-    marginHorizontal: 8,
+    width: 0.5,
+    height: 9,
+    backgroundColor: '#4E4E4E',
+    opacity: 0.5,
+    marginHorizontal: 5,
+  },
+  addressBox: {
+    height: 18,
+    marginTop: 10,
+    justifyContent: 'center',
   },
   addressText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
-    marginBottom: 8,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    includeFontPadding: false,
   },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  priceBox: {
+    position: 'absolute',
+    left: 0,
+    top: 74.5,
   },
   priceText: {
     fontFamily: FONT.semibold,
-    fontSize: 20,
-    color: '#FF6C40',
+    fontSize: 22,
+    lineHeight: 30,
+    color: ORANGE,
+    includeFontPadding: false,
   },
   timeAgoContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: -2,
+    height: 18,
     flexDirection: 'row',
     alignItems: 'center',
   },
   clockIcon: {
-    width: 12,
-    height: 12,
-    tintColor: '#FF6C40',
-    marginRight: 4,
+    width: 14,
+    height: 14,
+    tintColor: ORANGE,
+    marginRight: 2,
   },
   timeAgoText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#8A8A8A',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    opacity: 0.5,
+    includeFontPadding: false,
   },
 });
 

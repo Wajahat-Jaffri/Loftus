@@ -21,8 +21,8 @@ const FONT = {
 };
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = SCREEN_W - 40;
-const IMAGE_H = 200;
+const CARD_W = SCREEN_W - 30; // Figma card: 345 wide, 15px side margin
+const IMAGE_H = 224;
 const IMAGE_ROTATE_MS = 3500;
 
 const Feature = ({ icon, label }) => (
@@ -32,11 +32,10 @@ const Feature = ({ icon, label }) => (
   </View>
 );
 
-/** One recommendation card: rotating photo, details, time and price. */
+/** One recommendation card (same layout as the Explore card, 345 x 343). */
 const RecoCard = ({ item, onPress }) => {
   const images = item.images?.length ? item.images : [];
   const [imageIndex, setImageIndex] = useState(0);
-  // Favorites are shared by the whole app (see FavoritesContext).
   const { isFavorite: isFavoriteId, toggleFavorite } = useFavorites();
   const isFavorite = isFavoriteId(item.id);
 
@@ -53,9 +52,7 @@ const RecoCard = ({ item, onPress }) => {
     <View style={styles.page}>
       <TouchableOpacity activeOpacity={0.95} onPress={() => onPress?.(item)} style={styles.card}>
         <View style={styles.imageWrap}>
-          {images.length > 0 && (
-            <Image source={images[imageIndex]} style={styles.image} />
-          )}
+          {images.length > 0 && <Image source={images[imageIndex]} style={styles.image} />}
 
           <View style={styles.offersBadge}>
             <Text style={styles.offersText}>{item.offers ?? 3} Offers</Text>
@@ -77,35 +74,40 @@ const RecoCard = ({ item, onPress }) => {
             {images.map((_, i) => (
               <View
                 key={i}
-                style={[styles.imageDot, i === imageIndex ? styles.imageDotActive : styles.imageDotInactive]}
+                style={i === imageIndex ? styles.imageDotActive : styles.imageDotInactive}
               />
             ))}
           </View>
         </View>
 
         <View style={styles.details}>
-          <Text style={styles.title} numberOfLines={1}>
-            {item.title}
-          </Text>
+          <View style={styles.titleBox}>
+            <Text style={styles.title} numberOfLines={1}>
+              {item.title}
+            </Text>
+          </View>
 
           <View style={styles.featuresRow}>
-            <Feature icon={ICONS.bed} label={item.beds} />
+            <Feature icon={ICONS.bedroom || ICONS.bed} label={item.beds} />
             <View style={styles.divider} />
             <Feature icon={ICONS.bath} label={item.baths} />
             <View style={styles.divider} />
-            <Feature icon={ICONS.area} label={item.sqft} />
+            <Feature icon={ICONS.bed} label={item.sqft} />
           </View>
 
-          <Text style={styles.address} numberOfLines={1}>
-            {item.address}
-          </Text>
+          <View style={styles.addressBox}>
+            <Text style={styles.address} numberOfLines={1}>
+              {item.address}
+            </Text>
+          </View>
 
-          <View style={styles.bottomRow}>
-            <View style={styles.timeRow}>
-              <Image source={ICONS.clock} style={styles.clockIcon} resizeMode="contain" />
-              <Text style={styles.timeText}>{item.timeAgo}</Text>
-            </View>
+          <View style={styles.priceBox}>
             <Text style={styles.price}>{item.price}</Text>
+          </View>
+
+          <View style={styles.timeRow}>
+            <Image source={ICONS.clock} style={styles.clockIcon} resizeMode="contain" />
+            <Text style={styles.timeText}>{item.timeAgo}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -114,9 +116,11 @@ const RecoCard = ({ item, onPress }) => {
 };
 
 /**
- * "Recommendations" — one card per page, swipe sideways, dots underneath.
+ * "Recommendations": heading 20/500, one 345 x 343 card per page,
+ * swipe sideways, dots underneath.
+ *
  * Props:
- *  - items: list of properties (defaults to the dummy list without `currentId`)
+ *  - items: list of properties (defaults to the dummy list)
  *  - currentId: the property being viewed, so it isn't recommended to itself
  *  - onPressItem(property): open that property
  */
@@ -170,27 +174,34 @@ const Recommendations = ({ items, currentId, onPressItem }) => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: 26,
+    marginTop: 24,
   },
   heading: {
-    fontFamily: FONT.semibold,
-    fontSize: 18,
-    color: '#1A1A1A',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    height: 30,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    fontFamily: FONT.medium,
+    fontSize: 20,
+    lineHeight: 30,
+    color: '#303131',
+    includeFontPadding: false,
   },
 
-  // Each page is a full screen wide; the card sits inside with 20px margins.
+  // Each page is a full screen wide; the card sits inside with 15px margins.
   page: {
     width: SCREEN_W,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
   card: {
     width: CARD_W,
+    paddingBottom: 8,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
+    borderTopWidth: 0,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(133,135,138,0.3)',
     overflow: 'hidden',
   },
   imageWrap: {
@@ -204,128 +215,165 @@ const styles = StyleSheet.create({
   },
   offersBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 11,
+    left: 17,
+    height: 23,
+    paddingHorizontal: 8,
+    borderRadius: 50,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   offersText: {
     fontFamily: FONT.medium,
-    fontSize: 10,
-    color: '#1A1A1A',
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#000000',
+    includeFontPadding: false,
   },
   heartButton: {
     position: 'absolute',
-    top: 10,
-    right: 12,
+    top: 11,
+    right: 17,
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   heartIcon: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
   imageDots: {
     position: 'absolute',
-    bottom: 10,
-    alignSelf: 'center',
+    bottom: 11,
+    left: 0,
+    right: 0,
+    height: 9,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  imageDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 2.5,
+    justifyContent: 'center',
   },
   imageDotActive: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    marginHorizontal: 2,
     backgroundColor: ORANGE,
   },
   imageDotInactive: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginHorizontal: 2,
     backgroundColor: '#FFFFFF',
   },
 
   details: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 12,
+    height: 103,
+    marginTop: 8,
+    marginHorizontal: 7,
+  },
+  titleBox: {
+    marginTop: -4,
+    marginBottom: 7,
   },
   title: {
     fontFamily: FONT.semibold,
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 22,
     color: '#000000',
-    marginBottom: 6,
+    includeFontPadding: false,
   },
   featuresRow: {
+    height: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   featureIcon: {
-    width: 13,
-    height: 13,
+    width: 16,
+    height: 16,
     tintColor: ORANGE,
-    marginRight: 4,
+    marginRight: 2,
   },
   featureText: {
-    fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#4E4E4E',
+    includeFontPadding: false,
   },
   divider: {
-    width: 1,
-    height: 11,
-    backgroundColor: '#D1D1D1',
-    marginHorizontal: 8,
+    width: 0.5,
+    height: 9,
+    marginHorizontal: 5,
+    backgroundColor: '#4E4E4E',
+    opacity: 0.5,
+  },
+  addressBox: {
+    height: 18,
+    marginTop: 10,
+    justifyContent: 'center',
   },
   address: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#1A1A1A',
-    marginBottom: 8,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    includeFontPadding: false,
   },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  priceBox: {
+    position: 'absolute',
+    left: 0,
+    top: 74.5,
+  },
+  price: {
+    fontFamily: FONT.semibold,
+    fontSize: 22,
+    lineHeight: 30,
+    color: ORANGE,
+    includeFontPadding: false,
   },
   timeRow: {
+    position: 'absolute',
+    right: 0,
+    bottom: -2,
+    height: 18,
     flexDirection: 'row',
     alignItems: 'center',
   },
   clockIcon: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     tintColor: ORANGE,
-    marginRight: 4,
+    marginRight: 2,
   },
   timeText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#8A8A8A',
-  },
-  price: {
-    fontFamily: FONT.semibold,
-    fontSize: 20,
-    color: ORANGE,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#4E4E4E',
+    opacity: 0.5,
+    includeFontPadding: false,
   },
 
   // Dots under the card carousel
   pageDots: {
+    marginTop: 14,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 14,
   },
   pageDot: {
     width: 6,

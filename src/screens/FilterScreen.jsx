@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   SafeAreaView,
   ScrollView,
@@ -12,17 +13,17 @@ import {
   PanResponder,
   KeyboardAvoidingView,
 } from 'react-native';
+import ScreenHeader from '../components/ScreenHeader';
+import { ICONS } from '../assets';
 
 const ORANGE = '#FF6C40';
-const BORDER_GREY = '#E3E3E3';
-const TRACK_GREY = '#E9E9E9';
-const TEXT_DARK = '#1A1A1A';
-const TEXT_GREY = '#6B6B6B';
+const BORDER_GREY = '#E9E9E9';
+const TRACK_GREY = '#F3F4F6';
+const TEXT_GREY = '#5B5B5B';
 
 const FONT = {
   regular: 'Poppins-Regular',
   medium: 'Poppins-Medium',
-  semibold: 'Poppins-SemiBold',
 };
 
 const PRICE_MIN = 0;
@@ -61,25 +62,17 @@ const chunk = (arr, size) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* Dual-thumb range slider (no external library)                       */
+/* Dual-thumb range slider (Figma: track 10, thumb 18 + 3px border)    */
 /* ------------------------------------------------------------------ */
-const THUMB = 22;
-const TRACK_HEIGHT = 5;
+const THUMB = 18;
+const TRACK_HEIGHT = 10;
+const SLIDER_HEIGHT = 27;
 
-const RangeSlider = ({
-  min,
-  max,
-  low,
-  high,
-  step = 1,
-  onChange,
-  onInteract,
-}) => {
+const RangeSlider = ({ min, max, low, high, step = 1, onChange, onInteract }) => {
   const [width, setWidth] = useState(0);
   const widthRef = useRef(0);
   const startValueRef = useRef(0);
 
-  // Latest props, readable from inside the (created-once) pan responders.
   const latest = useRef({});
   latest.current = { min, max, low, high, step, onChange, onInteract };
 
@@ -138,12 +131,12 @@ const RangeSlider = ({
       />
       <View
         {...lowResponder.panHandlers}
-        hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+        hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
         style={[styles.sliderThumb, { left: lowPos }]}
       />
       <View
         {...highResponder.panHandlers}
-        hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+        hitSlop={{ top: 12, bottom: 12, left: 10, right: 10 }}
         style={[styles.sliderThumb, { left: highPos }]}
       />
     </View>
@@ -158,10 +151,7 @@ const FilterScreen = ({ navigation }) => {
 
   // Price
   const [price, setPrice] = useState({ low: 5308, high: 10130800 });
-  const [priceText, setPriceText] = useState({
-    low: '5308',
-    high: '10130800',
-  });
+  const [priceText, setPriceText] = useState({ low: '5308', high: '10130800' });
 
   // Beds / Baths
   const [beds, setBeds] = useState({ low: 0, high: 10 });
@@ -174,10 +164,7 @@ const FilterScreen = ({ navigation }) => {
 
   // Laundry + features (pre-selected like the Figma design)
   const [laundry, setLaundry] = useState('In Unit');
-  const [selectedFeatures, setSelectedFeatures] = useState([
-    'Attic',
-    'Front yard',
-  ]);
+  const [selectedFeatures, setSelectedFeatures] = useState(['Attic', 'Front yard']);
 
   const digitsOnly = (t) => t.replace(/[^0-9]/g, '');
 
@@ -203,27 +190,28 @@ const FilterScreen = ({ navigation }) => {
 
   const toggleFeature = (feature) =>
     setSelectedFeatures((prev) =>
-      prev.includes(feature)
-        ? prev.filter((f) => f !== feature)
-        : [...prev, feature]
+      prev.includes(feature) ? prev.filter((f) => f !== feature) : [...prev, feature]
     );
+
+  const renderPriceBox = (which) => (
+    <View style={[styles.priceBox, which === 'high' && { marginRight: 0 }]}>
+      <Image source={ICONS.currencyDollar} style={styles.dollarIcon} resizeMode="contain" />
+      <TextInput
+        style={styles.priceInput}
+        value={priceText[which]}
+        onChangeText={(t) => setPriceText((p) => ({ ...p, [which]: digitsOnly(t) }))}
+        onEndEditing={() => commitPriceText(which)}
+        keyboardType="numeric"
+        maxLength={9}
+      />
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation?.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backChevron}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Filters</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <ScreenHeader title="Filters" onBack={() => navigation?.goBack()} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -235,8 +223,8 @@ const FilterScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.container}
         >
-          {/* Price */}
-          <View style={styles.section}>
+          {/* Price (Figma top 116) */}
+          <View style={[styles.section, { marginBottom: 23 }]}>
             <Text style={styles.sectionTitle}>Price</Text>
             <RangeSlider
               min={PRICE_MIN}
@@ -248,36 +236,12 @@ const FilterScreen = ({ navigation }) => {
               onInteract={(active) => setScrollEnabled(!active)}
             />
             <View style={styles.rowTwoInputs}>
-              <View style={styles.inputBoxPrefix}>
-                <Text style={styles.prefixText}>$</Text>
-                <TextInput
-                  style={styles.inputWithPrefix}
-                  value={priceText.low}
-                  onChangeText={(t) =>
-                    setPriceText((p) => ({ ...p, low: digitsOnly(t) }))
-                  }
-                  onEndEditing={() => commitPriceText('low')}
-                  keyboardType="numeric"
-                  maxLength={9}
-                />
-              </View>
-              <View style={styles.inputBoxPrefix}>
-                <Text style={styles.prefixText}>$</Text>
-                <TextInput
-                  style={styles.inputWithPrefix}
-                  value={priceText.high}
-                  onChangeText={(t) =>
-                    setPriceText((p) => ({ ...p, high: digitsOnly(t) }))
-                  }
-                  onEndEditing={() => commitPriceText('high')}
-                  keyboardType="numeric"
-                  maxLength={9}
-                />
-              </View>
+              {renderPriceBox('low')}
+              {renderPriceBox('high')}
             </View>
           </View>
 
-          {/* Beds */}
+          {/* Beds (Figma top 244) */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Beds</Text>
             <RangeSlider
@@ -290,14 +254,12 @@ const FilterScreen = ({ navigation }) => {
               onInteract={(active) => setScrollEnabled(!active)}
             />
             <View style={styles.rangeLabelsRow}>
-              <Text style={styles.rangeLabelText}>
-                {beds.low === 0 ? 'Studio' : beds.low}
-              </Text>
+              <Text style={styles.rangeLabelText}>{beds.low === 0 ? 'Studio' : beds.low}</Text>
               <Text style={styles.rangeLabelText}>{beds.high}</Text>
             </View>
           </View>
 
-          {/* Baths */}
+          {/* Baths (Figma top 359) */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Baths</Text>
             <RangeSlider
@@ -315,7 +277,7 @@ const FilterScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Listing Information */}
+          {/* Listing Information (Figma top 474) */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Listing Information</Text>
             <View style={styles.rowThreeInputs}>
@@ -350,7 +312,7 @@ const FilterScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Laundry */}
+          {/* Laundry (Figma top 584) */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Laundry</Text>
             <View style={styles.radioGroup}>
@@ -373,12 +335,12 @@ const FilterScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Features — rows of 3, chips stretch to fill each row */}
+          {/* Features (Figma top 672): rows of 3, chips grow to fill the row */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Features</Text>
             {chunk(FEATURES_LIST, 3).map((row, rowIndex) => (
               <View key={rowIndex} style={styles.chipsRow}>
-                {row.map((feature) => {
+                {row.map((feature, i) => {
                   const isSelected = selectedFeatures.includes(feature);
                   return (
                     <TouchableOpacity
@@ -387,15 +349,13 @@ const FilterScreen = ({ navigation }) => {
                       onPress={() => toggleFeature(feature)}
                       style={[
                         styles.featureChip,
+                        i < row.length - 1 && { marginRight: 8 },
                         isSelected && styles.featureChipSelected,
                       ]}
                     >
                       <Text
                         numberOfLines={1}
-                        style={[
-                          styles.featureText,
-                          isSelected && styles.featureTextSelected,
-                        ]}
+                        style={[styles.featureText, isSelected && styles.featureTextSelected]}
                       >
                         {feature}
                       </Text>
@@ -418,66 +378,44 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    height: 44,
-  },
-  backButton: {
-    width: 24,
-  },
-  backChevron: {
-    fontSize: 30,
-    lineHeight: 34,
-    color: TEXT_DARK,
-    fontWeight: '300',
-  },
-  headerTitle: {
-    fontFamily: FONT.medium,
-    fontSize: 16,
-    color: TEXT_DARK,
-  },
-  headerSpacer: {
-    width: 24,
-  },
-
+  // header ends at Figma 96, Price starts at 116
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 40,
+    paddingHorizontal: 15,
+    paddingTop: 20,
+    paddingBottom: 45,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontFamily: FONT.semibold,
-    fontSize: 14,
-    color: TEXT_DARK,
+    height: 24,
     marginBottom: 10,
+    fontFamily: FONT.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#000000',
+    includeFontPadding: false,
   },
 
   // Slider
   sliderContainer: {
-    height: THUMB + 6,
-    justifyContent: 'center',
-    marginBottom: 4,
+    height: SLIDER_HEIGHT,
   },
   sliderBackgroundTrack: {
     position: 'absolute',
-    left: THUMB / 2,
-    right: THUMB / 2,
+    left: 0,
+    right: 0,
+    top: 8,
     height: TRACK_HEIGHT,
     backgroundColor: TRACK_GREY,
-    borderRadius: TRACK_HEIGHT / 2,
+    borderRadius: 50,
   },
   sliderActiveTrack: {
     position: 'absolute',
+    top: 8,
     height: TRACK_HEIGHT,
     backgroundColor: ORANGE,
-    borderRadius: TRACK_HEIGHT / 2,
+    borderRadius: 50,
   },
   sliderThumb: {
     position: 'absolute',
@@ -486,128 +424,136 @@ const styles = StyleSheet.create({
     height: THUMB,
     borderRadius: THUMB / 2,
     backgroundColor: '#FFFFFF',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: ORANGE,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
   },
   rangeLabelsRow: {
+    height: 21,
+    marginTop: 9,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 2,
+    alignItems: 'center',
   },
   rangeLabelText: {
     fontFamily: FONT.regular,
-    fontSize: 11,
+    fontSize: 14,
+    lineHeight: 21,
     color: TEXT_GREY,
+    includeFontPadding: false,
   },
 
-  // Price inputs
+  // Price inputs: 165 x 34, radius 10, padding 8 / 6, gap 5
   rowTwoInputs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  inputBoxPrefix: {
+  priceBox: {
+    flex: 1,
+    height: 34,
     flexDirection: 'row',
     alignItems: 'center',
-    width: '48%',
+    paddingHorizontal: 6,
     borderWidth: 1,
     borderColor: BORDER_GREY,
-    borderRadius: 8,
-    height: 38,
-    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    marginRight: 16,
   },
-  prefixText: {
-    fontFamily: FONT.regular,
-    fontSize: 12,
-    color: TEXT_DARK,
-    marginRight: 8,
+  dollarIcon: {
+    width: 18,
+    height: 18,
+    tintColor: TEXT_GREY,
+    marginRight: 5,
   },
-  inputWithPrefix: {
+  priceInput: {
     flex: 1,
+    padding: 0,
     fontFamily: FONT.regular,
-    fontSize: 12,
-    color: TEXT_DARK,
-    paddingVertical: 0,
+    fontSize: 14,
+    color: TEXT_GREY,
+    includeFontPadding: false,
   },
 
-  // Listing info
+  // Listing info: three 110 x 34 boxes
   rowThreeInputs: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   inputCol: {
-    width: '31%',
+    width: 110,
   },
   fieldLabel: {
-    fontFamily: FONT.semibold,
-    fontSize: 10,
-    color: TEXT_DARK,
-    marginBottom: 5,
+    height: 18,
+    fontFamily: FONT.medium,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#000000',
+    includeFontPadding: false,
   },
   simpleInput: {
+    height: 34,
+    paddingHorizontal: 6,
+    paddingVertical: 0,
     borderWidth: 1,
     borderColor: BORDER_GREY,
-    borderRadius: 8,
-    height: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 0,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontSize: 14,
+    color: TEXT_GREY,
+    includeFontPadding: false,
   },
 
-  // Laundry radios
+  // Laundry radios: 18px circle, 2px border, 14px dot, gap 12
   radioGroup: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   radioOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 22,
   },
   outerRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
     borderColor: ORANGE,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 6,
+    marginRight: 12,
   },
   innerRadio: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: ORANGE,
   },
   radioLabel: {
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: TEXT_DARK,
+    fontSize: 14,
+    lineHeight: 21,
+    color: TEXT_GREY,
+    includeFontPadding: false,
   },
 
-  // Feature chips
+  // Feature chips: 29 high, radius 21, rows gap 10
   chipsRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   featureChip: {
     flexGrow: 1,
+    height: 29,
+    paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 21,
     borderWidth: 1,
     borderColor: BORDER_GREY,
-    marginRight: 8,
     backgroundColor: '#FFFFFF',
   },
   featureChipSelected: {
@@ -616,8 +562,10 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: TEXT_GREY,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#888888',
+    includeFontPadding: false,
   },
   featureTextSelected: {
     color: '#FFFFFF',

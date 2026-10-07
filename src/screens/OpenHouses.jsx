@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 const ORANGE = '#FF6C40';
 
@@ -9,14 +9,9 @@ const FONT = {
   semibold: 'Poppins-SemiBold',
 };
 
-const { width: SCREEN_W } = Dimensions.get('window');
-// Leave a peek of the next card on the right, like the Figma design.
-const CARD_W = SCREEN_W - 40 - 30;
-const CARD_GAP = 12;
-
 const DEFAULT_OPEN_HOUSES = [
   { id: 'oh1', day: '10', month: 'AUG', weekday: 'Thursday', from: '12:00 AM', to: '12:00 AM' },
-  { id: 'oh2', day: '11', month: 'AUG', weekday: 'Friday', from: '01:00 PM', to: '12:00 AM' },
+  { id: 'oh2', day: '11', month: 'AUG', weekday: 'Friday', from: '01:00 PM', to: '02:00 PM' },
   { id: 'oh3', day: '12', month: 'AUG', weekday: 'Saturday', from: '10:00 AM', to: '02:00 PM' },
 ];
 
@@ -26,26 +21,29 @@ const TimePill = ({ label }) => (
   </View>
 );
 
-/** "Open Houses" — horizontally scrolling date cards. */
+/**
+ * "Open Houses": Figma cards 240 x 144 (radius 15, border #EEE), gap 17.
+ * Place it inside a parent with 15px side padding (it breaks out of it by itself).
+ */
 const OpenHouses = ({ items = DEFAULT_OPEN_HOUSES }) => (
-  <View style={styles.wrapper}>
+  <View>
     <Text style={styles.title}>Open Houses</Text>
 
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      snapToInterval={CARD_W + CARD_GAP}
-      decelerationRate="fast"
+      style={styles.scroll}
       contentContainerStyle={styles.listContent}
     >
       {items.map((item) => (
         <View key={item.id} style={styles.card}>
-          <View style={styles.dateRow}>
-            <Text style={styles.day}>{item.day}</Text>
-            <Text style={styles.month}>{item.month}</Text>
+          <View style={styles.dateBlock}>
+            <View style={styles.dateRow}>
+              <Text style={styles.day}>{item.day}</Text>
+              <Text style={styles.month}>{item.month}</Text>
+            </View>
+            <Text style={styles.weekday}>{item.weekday}</Text>
           </View>
-
-          <Text style={styles.weekday}>{item.weekday}</Text>
 
           <View style={styles.timeRow}>
             <TimePill label={item.from} />
@@ -59,76 +57,100 @@ const OpenHouses = ({ items = DEFAULT_OPEN_HOUSES }) => (
 );
 
 const styles = StyleSheet.create({
-  wrapper: {
-    marginTop: 22,
-  },
   title: {
+    marginLeft: 7,
+    marginBottom: 10,
     fontFamily: FONT.medium,
     fontSize: 14,
-    color: '#1A1A1A',
-    paddingHorizontal: 20,
-    marginBottom: 12,
+    lineHeight: 21,
+    color: '#000000',
+    includeFontPadding: false,
+  },
+  // The parent column has 15px side padding; the scroller breaks out of it
+  // so the cards can slide to the screen edge. Cards start at Figma x = 12.
+  scroll: {
+    marginHorizontal: -15,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingLeft: 12,
+    paddingRight: 15,
   },
   card: {
-    width: CARD_W,
-    marginRight: CARD_GAP,
+    width: 240,
+    height: 144,
+    marginRight: 17,
+    paddingVertical: 11,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#EEEEEE',
-    borderRadius: 16,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    paddingHorizontal: 14,
+  },
+  dateBlock: {
+    height: 75,
     alignItems: 'center',
+    marginBottom: 13,
   },
   dateRow: {
+    height: 48,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   day: {
     fontFamily: FONT.semibold,
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 32,
+    lineHeight: 48,
     color: ORANGE,
+    includeFontPadding: false,
   },
   month: {
-    fontFamily: FONT.medium,
-    fontSize: 12,
-    color: ORANGE,
     marginLeft: 4,
-    marginBottom: 4,
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: ORANGE,
+    includeFontPadding: false,
   },
   weekday: {
-    fontFamily: FONT.semibold,
+    height: 27,
+    fontFamily: FONT.medium,
     fontSize: 18,
-    color: '#1A1A1A',
-    marginTop: 6,
-    marginBottom: 12,
+    lineHeight: 27,
+    color: '#000000',
+    includeFontPadding: false,
   },
   timeRow: {
+    height: 26,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   pill: {
-    borderWidth: 1,
-    borderColor: '#DCDCDC',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
+    minWidth: 70,
+    height: 26,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.9,
+    borderColor: '#DFDFDF',
+    borderRadius: 55,
+    backgroundColor: '#FFFFFF',
   },
   pillText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#000000',
+    includeFontPadding: false,
   },
   toText: {
+    marginHorizontal: 20,
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#6B6B6B',
-    marginHorizontal: 10,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#000000',
+    includeFontPadding: false,
   },
 });
 

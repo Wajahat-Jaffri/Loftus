@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { ICONS, IMAGES } from '../assets';
 
 const FONT = {
@@ -14,20 +7,19 @@ const FONT = {
   medium: 'Poppins-Medium',
 };
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const MAP_H = Math.round((SCREEN_W - 40) * 0.5);
-
 /**
- * "Location" — a small map preview with an expand button.
+ * "Location": title 14/500, map frame 345 x 215 (radius 12),
+ * white 36px expand button at top 12 / right 3.
+ *
  * Put the exported Figma crop at src/assets/images/locationMap.png and add
  * `locationMap: require('./images/locationMap.png')` to IMAGES.
- * Until then a plain placeholder is shown.
+ * Until then the big Explore map image is used (or a plain placeholder).
  */
 const LocationSection = ({ onExpand }) => {
-  const mapImage = IMAGES.locationMap;
+  const mapImage = IMAGES.locationMap || IMAGES.map;
 
   return (
-    <View style={styles.wrapper}>
+    <View>
       <Text style={styles.title}>Location</Text>
 
       <View style={styles.mapBox}>
@@ -57,18 +49,16 @@ const LocationSection = ({ onExpand }) => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: 20,
-    marginTop: 22,
-  },
   title: {
-    fontFamily: FONT.medium,
-    fontSize: 12,
-    color: '#1A1A1A',
     marginBottom: 10,
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#303131',
+    includeFontPadding: false,
   },
   mapBox: {
-    height: MAP_H,
+    height: 215,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#E8EEF2',
@@ -86,29 +76,29 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontFamily: FONT.regular,
-    fontSize: 18,
-    color: '#1A1A1A',
+    fontSize: 24,
+    color: '#000000',
   },
   expandButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 4,
+    top: 12,
+    right: 3,
+    width: 36,
+    height: 36,
+    borderRadius: 60,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   expandIcon: {
-    width: 14,
-    height: 14,
-    tintColor: '#1A1A1A',
+    width: 22,
+    height: 22,
+    tintColor: '#444444',
   },
   expandGlyph: {
-    fontSize: 14,
-    lineHeight: 16,
-    color: '#1A1A1A',
+    fontSize: 20,
+    lineHeight: 24,
+    color: '#444444',
   },
 });
 

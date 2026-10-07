@@ -21,26 +21,36 @@ const UpArrow = () =>
     <Text style={styles.arrowText}>↑</Text>
   );
 
-/** "Listing History" table. */
+/**
+ * "Listing History": title 14/500, head 34 high (#FED9CF, radius 8 8 0 0),
+ * rows 52 high, padding 24.
+ */
 const ListingHistory = ({ rows = DEFAULT_ROWS }) => (
-  <View style={styles.wrapper}>
+  <View>
     <Text style={styles.title}>Listing History</Text>
 
     <View style={styles.table}>
       <View style={styles.headerRow}>
-        <Text style={[styles.headerText, styles.colDate]}>Date</Text>
-        <Text style={[styles.headerText, styles.colStatus]}>Status</Text>
-        <Text style={[styles.headerText, styles.colPrice]}>Price</Text>
+        <View style={styles.headCellDate}>
+          <Text style={styles.headerText}>Date</Text>
+        </View>
+        <View style={styles.headCellStatus}>
+          <Text style={styles.headerText}>Status</Text>
+        </View>
+        <View style={styles.headCellPrice}>
+          <Text style={styles.headerText}>Price</Text>
+        </View>
       </View>
 
-      {rows.map((row, i) => (
-        <View
-          key={row.id}
-          style={[styles.row, i < rows.length - 1 && styles.rowBorder]}
-        >
-          <Text style={[styles.cellText, styles.colDate]}>{row.date}</Text>
-          <Text style={[styles.cellText, styles.colStatus]}>{row.status}</Text>
-          <View style={[styles.priceCell, styles.colPrice]}>
+      {rows.map((row) => (
+        <View key={row.id} style={styles.row}>
+          <View style={styles.cellDate}>
+            <Text style={styles.cellText}>{row.date}</Text>
+          </View>
+          <View style={styles.cellStatus}>
+            <Text style={styles.cellText}>{row.status}</Text>
+          </View>
+          <View style={styles.cellPrice}>
             {row.up && <UpArrow />}
             <Text style={styles.cellText}>{row.price}</Text>
           </View>
@@ -51,62 +61,57 @@ const ListingHistory = ({ rows = DEFAULT_ROWS }) => (
 );
 
 const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: 20,
-    marginTop: 22,
-  },
   title: {
-    fontFamily: FONT.medium,
-    fontSize: 12,
-    color: '#1A1A1A',
     marginBottom: 10,
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#303131',
+    includeFontPadding: false,
   },
   table: {
-    borderWidth: 1,
-    borderColor: '#EDEDED',
-    borderRadius: 4,
-    overflow: 'hidden',
     backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
   },
   headerRow: {
+    height: 34,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFDCD2',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 24,
+    backgroundColor: '#FED9CF',
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
+  headCellDate: { width: 107 },
+  headCellStatus: { width: 109 },
+  headCellPrice: { flex: 1 },
   headerText: {
     fontFamily: FONT.regular,
-    fontSize: 9,
-    color: '#1A1A1A',
+    fontSize: 10,
+    lineHeight: 14,
+    color: 'rgba(0,0,0,0.8)',
+    includeFontPadding: false,
   },
   row: {
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 24,
   },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#EDEDED',
+  cellDate: { width: 104 },
+  cellStatus: { width: 112 },
+  cellPrice: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cellText: {
     fontFamily: FONT.regular,
-    fontSize: 10,
-    color: '#1A1A1A',
-  },
-  colDate: {
-    flex: 1.05,
-  },
-  colStatus: {
-    flex: 1.25,
-  },
-  colPrice: {
-    flex: 1,
-  },
-  priceCell: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#14191F',
+    includeFontPadding: false,
   },
   arrowText: {
     fontFamily: FONT.medium,
@@ -115,8 +120,8 @@ const styles = StyleSheet.create({
     marginRight: 1,
   },
   arrowImage: {
-    width: 9,
-    height: 9,
+    width: 10,
+    height: 10,
     marginRight: 2,
   },
 });
