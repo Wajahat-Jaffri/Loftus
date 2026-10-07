@@ -12,15 +12,22 @@ import {
 } from 'react-native';
 import { ICONS } from '../../assets';
 
+const CHEVRON_PNG = require('../../assets/icons/ChevronDown.png');
+const PLUS_PNG = require('../../assets/icons/Plus.png');
+
 export const COLORS = {
   orange: '#FF6C40',
   orangeLight: '#FFC4B2',
-  blue: '#00AEEF',
+  blue: '#00ACFC',
   red: '#E5322D',
   text: '#1C1C1C',
   border: '#E3E3E3',
   grey: '#9E9E9E',
-  placeholder: '#A8A8A8',
+  placeholder: '#8C8C8C',
+  // Figma form tokens
+  fieldBorder: '#C2C2C2',
+  fieldText: '#404040',
+  label: '#6A6A6A',
 };
 
 export const FONT = {
@@ -67,7 +74,21 @@ export const prettyDate = (s) => {
 
 const pad = (n) => String(n).padStart(2, '0');
 
-/* ---------- small icons ---------- */
+/* Vertical stack with a fixed gap (RN gap is not available on older versions) */
+export const Stack = ({ gap = 16, style, children }) => {
+  const items = React.Children.toArray(children).filter(Boolean);
+  return (
+    <View style={style}>
+      {items.map((child, i) => (
+        <View key={child.key != null ? child.key : i} style={i > 0 ? { marginTop: gap } : null}>
+          {child}
+        </View>
+      ))}
+    </View>
+  );
+};
+
+/* ---------- small icons (kept for other screens) ---------- */
 
 export const Chevron = ({ size = 6, color = COLORS.text }) => (
   <View
@@ -135,46 +156,56 @@ export const BackArrow = () => (
 
 /* ---------- text link button ("+ Add", "+ Credit Card") ---------- */
 
-export const AddLink = ({ label, onPress }) => (
+export const AddLink = ({ label = 'Add', onPress, style }) => (
   <TouchableOpacity
-    style={styles.addLink}
+    style={[styles.addLink, style]}
     activeOpacity={0.7}
     onPress={onPress}
     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
   >
-    <PlusIcon />
+    <Image source={PLUS_PNG} style={styles.addPlus} resizeMode="contain" />
     <Text style={styles.addLinkText}>{label}</Text>
   </TouchableOpacity>
 );
 
 /* ---------- form controls ---------- */
 
-export const FieldLabel = ({ children }) => <Text style={styles.label}>{children}</Text>;
+export const FieldLabel = ({ children }) => (
+  <View style={styles.labelBox}>
+    <Text style={styles.label}>{children}</Text>
+  </View>
+);
 
-export const MoneyField = ({ label, value, onChangeText }) => (
-  <View style={styles.fieldWrap}>
+/* Figma money / number fields are 343 wide (2px narrower than date and select fields) */
+const NARROW = { marginRight: 2 };
+
+export const MoneyField = ({ label, value, onChangeText, containerStyle }) => (
+  <View style={[styles.fieldWrap, NARROW, containerStyle]}>
     {!!label && <FieldLabel>{label}</FieldLabel>}
-    <View style={styles.inputBox}>
+    <View style={[styles.inputBox, styles.inputBoxEnd]}>
       <TextInput
         style={styles.input}
         value={value}
         onChangeText={(t) => onChangeText(sanitizeMoney(t))}
         keyboardType="decimal-pad"
+        placeholderTextColor={COLORS.placeholder}
       />
       <Image source={ICONS.currencyDollar} style={styles.currencyIcon} resizeMode="contain" />
     </View>
   </View>
 );
 
-export const SuffixField = ({ label, value, onChangeText, suffix }) => (
-  <View style={styles.fieldWrap}>
+export const SuffixField = ({ label, value, onChangeText, suffix, containerStyle }) => (
+  <View style={[styles.fieldWrap, NARROW, containerStyle]}>
     {!!label && <FieldLabel>{label}</FieldLabel>}
-    <View style={styles.inputBox}>
+    <View style={[styles.inputBox, styles.inputBoxEnd]}>
       <TextInput
         style={styles.input}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(t) => onChangeText(t.replace(/[^0-9]/g, ''))}
         keyboardType="number-pad"
+        maxLength={3}
+        placeholderTextColor={COLORS.placeholder}
       />
       <Text style={styles.suffix}>{suffix}</Text>
     </View>
@@ -290,13 +321,18 @@ const CalendarModal = ({ visible, value, onClose, onPick }) => {
   );
 };
 
+/* dd/mm/yyyy box with the calendar icon on the right (Figma: 48 high, icon 24) */
 export const DateField = ({ label, value, onChangeText, containerStyle }) => {
   const [open, setOpen] = useState(false);
   return (
     <View style={[styles.fieldWrap, containerStyle]}>
       {!!label && <FieldLabel>{label}</FieldLabel>}
-      <TouchableOpacity activeOpacity={0.8} style={styles.inputBox} onPress={() => setOpen(true)}>
-        <Text style={[styles.selectText, !value && { color: COLORS.placeholder }]}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={[styles.inputBox, styles.inputBoxBetween]}
+        onPress={() => setOpen(true)}
+      >
+        <Text style={[styles.dateText, !value && { color: COLORS.placeholder }]}>
           {value || 'dd/mm/yyyy'}
         </Text>
         <Image source={ICONS.calendar} style={styles.calendarIcon} resizeMode="contain" />
@@ -315,14 +351,14 @@ export const DateField = ({ label, value, onChangeText, containerStyle }) => {
 };
 
 /**
- * Dropdown (fully round).
- * variant="box"   -> full width pill (height 40)
- * variant="small" -> small pill used for time pickers
+ * Dropdown (fully round, 48 high).
+ * variant="box"   -> full width (text 14)
+ * variant="small" -> half width used for the open house start / end time (text 12)
  */
 export const SelectField = ({
   label,
   value,
-  placeholder = 'Select...',
+  placeholder = 'Select..',
   options = [],
   onSelect,
   variant = 'box',
@@ -337,19 +373,17 @@ export const SelectField = ({
       {!!label && <FieldLabel>{label}</FieldLabel>}
       <TouchableOpacity
         activeOpacity={0.8}
-        style={small ? styles.smallBox : styles.inputBox}
+        style={[styles.inputBox, styles.inputBoxBetween, small && styles.inputBoxSmall]}
         onPress={() => setOpen(true)}
       >
-        <Text
-          numberOfLines={1}
-          style={[
-            small ? styles.smallText : styles.selectText,
-            !value && { color: small ? COLORS.text : COLORS.placeholder },
-          ]}
-        >
+        <Text numberOfLines={1} style={small ? styles.smallText : styles.selectText}>
           {value || placeholder}
         </Text>
-        <Chevron size={small ? 5 : 6} />
+        <Image
+          source={CHEVRON_PNG}
+          style={[styles.caret, small && { marginLeft: 4 }]}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -388,6 +422,7 @@ export const SelectField = ({
   );
 };
 
+/* Orange pill button. Figma: 345 x 50, text 14/500 */
 export const PrimaryButton = ({ label, onPress, color = COLORS.orange, style, textStyle }) => (
   <TouchableOpacity
     activeOpacity={0.85}
@@ -398,64 +433,106 @@ export const PrimaryButton = ({ label, onPress, color = COLORS.orange, style, te
   </TouchableOpacity>
 );
 
-/* List rows with divider lines (Confirmation / Duration screens) */
-export const SummaryRows = ({ rows }) => (
+/* White rows: label (14, #202020) on the left, value (14, #4B5563) on the right */
+export const SummaryRows = ({ rows, gap = 0 }) => (
   <View>
-    {rows.map((r) => (
-      <View key={r.label} style={styles.summaryRow}>
+    {rows.map((r, i) => (
+      <View key={r.label} style={[styles.summaryRow, i > 0 && gap ? { marginTop: gap } : null]}>
         <Text style={styles.summaryLabel}>{r.label}</Text>
-        <Text style={styles.summaryValue}>{r.value}</Text>
+        <Text style={[styles.summaryValue, r.small && styles.summaryValueSmall]} numberOfLines={1}>
+          {r.value}
+        </Text>
       </View>
     ))}
   </View>
 );
 
 const styles = StyleSheet.create({
-  fieldWrap: { marginBottom: 12 },
-  label: { fontFamily: FONT.regular, fontSize: 9, color: '#555555', marginBottom: 5, marginLeft: 4 },
+  fieldWrap: { alignSelf: 'stretch' },
+  labelBox: { paddingHorizontal: 4, height: 18, marginBottom: 4, justifyContent: 'center' },
+  label: {
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.label,
+    includeFontPadding: false,
+  },
   inputBox: {
-    height: 40,
+    height: 48,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 20,
+    borderColor: COLORS.fieldBorder,
+    borderRadius: 50,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
+  inputBoxEnd: { justifyContent: 'flex-end' },
+  inputBoxBetween: { justifyContent: 'space-between' },
+  // half width time pickers: tighter padding so "Select Start Time" fits on one line
+  inputBoxSmall: { paddingHorizontal: 12 },
   input: {
     flex: 1,
+    height: 46,
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.fieldText,
     paddingVertical: 0,
+    paddingHorizontal: 0,
+    includeFontPadding: false,
   },
-  currencyIcon: { width: 18, height: 18 },
-  suffix: { fontFamily: FONT.regular, fontSize: 9, color: COLORS.grey },
-  calendarIcon: { width: 14, height: 14, tintColor: '#777777' },
-  selectText: { flex: 1, fontFamily: FONT.regular, fontSize: 11, color: COLORS.text },
+  currencyIcon: { width: 24, height: 24, marginLeft: 8 },
+  suffix: {
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: COLORS.placeholder,
+    marginLeft: 8,
+    includeFontPadding: false,
+  },
+  calendarIcon: { width: 24, height: 24, tintColor: COLORS.placeholder },
+  dateText: {
+    flex: 1,
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: COLORS.fieldText,
+    includeFontPadding: false,
+  },
+  selectText: {
+    flex: 1,
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: COLORS.fieldText,
+    includeFontPadding: false,
+  },
+  caret: { width: 20, height: 20, tintColor: COLORS.fieldText, marginLeft: 8 },
 
   smallWrap: { flex: 1 },
-  smallBox: {
-    height: 30,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+  smallText: {
+    flex: 1,
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: COLORS.fieldText,
+    includeFontPadding: false,
   },
-  smallText: { fontFamily: FONT.regular, fontSize: 8.5, color: COLORS.text, marginRight: 6 },
 
   addLink: {
     alignSelf: 'flex-end',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    height: 16,
   },
-  addLinkText: { fontFamily: FONT.regular, fontSize: 10, color: COLORS.orange, marginLeft: 4 },
+  addPlus: { width: 16, height: 16, marginRight: 4 },
+  addLinkText: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: COLORS.orange,
+    includeFontPadding: false,
+  },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
@@ -474,24 +551,44 @@ const styles = StyleSheet.create({
   emptyText: { fontFamily: FONT.regular, fontSize: 12, color: COLORS.grey, paddingVertical: 12 },
 
   primaryBtn: {
-    height: 44,
-    borderRadius: 22,
+    height: 50,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryText: { fontFamily: FONT.medium, fontSize: 12, color: '#FFFFFF' },
+  primaryText: {
+    fontFamily: FONT.medium,
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#FFFFFF',
+    includeFontPadding: false,
+  },
 
   summaryRow: {
-    height: 40,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EAEAEA',
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
   },
-  summaryLabel: { fontFamily: FONT.regular, fontSize: 10, color: COLORS.text },
-  summaryValue: { fontFamily: FONT.regular, fontSize: 10, color: COLORS.text },
+  summaryLabel: {
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: '#202020',
+    includeFontPadding: false,
+  },
+  summaryValue: {
+    flexShrink: 1,
+    marginLeft: 16,
+    fontFamily: FONT.regular,
+    fontSize: 14,
+    lineHeight: 18,
+    color: '#4B5563',
+    includeFontPadding: false,
+  },
+  summaryValueSmall: { fontSize: 12, color: '#4E4E4E', maxWidth: 227 },
 
   /* calendar */
   centerBackdrop: {

@@ -3,8 +3,9 @@ import { View } from 'react-native';
 import { LISTING_FEE_PER_MONTH } from '../../../constants/listingData';
 import { SuffixField, SummaryRows, formatMoney } from '../ListingControls';
 
+/* Figma: field 36px under the stepper, fee rows 13px under the field, 8px apart */
 const DurationStep = ({ months, onChange, fees }) => (
-  <View>
+  <View style={{ marginTop: 36 }}>
     <SuffixField
       label="Expires in"
       value={months}
@@ -12,14 +13,17 @@ const DurationStep = ({ months, onChange, fees }) => (
       onChangeText={(t) => onChange(t.replace(/[^0-9]/g, '').slice(0, 3))}
     />
 
-    <SummaryRows
-      rows={[
-        { label: 'Listing Fees', value: `$${LISTING_FEE_PER_MONTH}/Monthly` },
-        { label: 'Total Listing Fee', value: formatMoney(fees.totalListingFee) },
-        { label: 'Processing Fee', value: formatMoney(fees.processingFee) },
-        { label: 'Total Due', value: formatMoney(fees.totalDue) },
-      ]}
-    />
+    <View style={{ marginTop: 13 }}>
+      <SummaryRows
+        gap={8}
+        rows={[
+          { label: 'Listing Fee', value: `$${LISTING_FEE_PER_MONTH}/Monthly` },
+          { label: 'Total Listing Fee', value: formatMoney(fees.totalListingFee) },
+          { label: 'Processing Fee', value: formatMoney(fees.processingFee) },
+          { label: 'Total Due', value: formatMoney(fees.totalDue) },
+        ]}
+      />
+    </View>
   </View>
 );
 

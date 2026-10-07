@@ -3,7 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'reac
 import { ICONS } from '../../assets';
 import { COLORS, FONT, FieldLabel } from './ListingControls';
 
-/* Plain round text input */
+const CHECK_PNG = require('../../assets/icons/Check.png');
+
+/* Plain round text input (Figma: 48 high, text 14 / #404040) */
 export const TextField = ({
   label,
   value,
@@ -57,7 +59,7 @@ export const DobField = ({ label, value, onChangeText, containerStyle }) => (
   </View>
 );
 
-/* Small square checkbox with label ("Entire Home") */
+/* Square checkbox with label ("Entire Home"). Figma: 22 x 22, radius 4, label 11/16 */
 export const CheckboxField = ({ label, checked, onChange }) => (
   <TouchableOpacity
     style={styles.checkRow}
@@ -66,13 +68,13 @@ export const CheckboxField = ({ label, checked, onChange }) => (
     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
   >
     <View style={[styles.checkBox, checked && styles.checkBoxOn]}>
-      {checked && <View style={styles.checkMark} />}
+      {checked && <Image source={CHECK_PNG} style={styles.checkTick} resizeMode="contain" />}
     </View>
     <Text style={styles.checkLabel}>{label}</Text>
   </TouchableOpacity>
 );
 
-/* Yes / No cards (Screening step) */
+/* Yes / No cards (Screening step). Figma: 164.5 x 50, radius 4, 16px gap between cards */
 export const OptionCards = ({ options, value, onChange }) => (
   <View style={styles.cardsRow}>
     {options.map((opt, i) => {
@@ -84,12 +86,12 @@ export const OptionCards = ({ options, value, onChange }) => (
           onPress={() => onChange(opt)}
           style={[
             styles.optionCard,
-            i !== options.length - 1 && { marginRight: 10 },
+            i !== options.length - 1 && { marginRight: 16 },
             selected && styles.optionCardOn,
           ]}
         >
           <View style={[styles.radio, selected && styles.radioOn]}>
-            {selected && <View style={styles.radioCheck} />}
+            {selected && <Image source={CHECK_PNG} style={styles.radioTick} resizeMode="contain" />}
           </View>
           <Text style={[styles.optionText, selected && styles.optionTextOn]}>{opt}</Text>
         </TouchableOpacity>
@@ -99,12 +101,12 @@ export const OptionCards = ({ options, value, onChange }) => (
 );
 
 const styles = StyleSheet.create({
-  fieldWrap: { marginBottom: 12 },
+  fieldWrap: { alignSelf: 'stretch' },
   inputBox: {
-    height: 40,
+    height: 48,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 20,
+    borderColor: COLORS.fieldBorder,
+    borderRadius: 50,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -112,69 +114,69 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    height: 46,
     fontFamily: FONT.regular,
-    fontSize: 11,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.fieldText,
     paddingVertical: 0,
+    paddingHorizontal: 0,
+    includeFontPadding: false,
   },
-  calendarIcon: { width: 14, height: 14, tintColor: '#777777' },
+  calendarIcon: { width: 24, height: 24, marginLeft: 8, tintColor: COLORS.placeholder },
 
-  checkRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginLeft: 4 },
+  checkRow: { flexDirection: 'row', alignItems: 'center', height: 22 },
   checkBox: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#9A9A9A',
+    borderColor: '#A5A5A5',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
   },
   checkBoxOn: { backgroundColor: COLORS.orange, borderColor: COLORS.orange },
-  checkMark: {
-    width: 3,
-    height: 6,
-    borderRightWidth: 1.4,
-    borderBottomWidth: 1.4,
-    borderColor: '#FFFFFF',
-    transform: [{ rotate: '45deg' }],
-    marginTop: -1,
+  checkTick: { width: 14, height: 14, tintColor: '#FFFFFF' },
+  checkLabel: {
+    marginLeft: 8,
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#707070',
+    includeFontPadding: false,
   },
-  checkLabel: { fontFamily: FONT.regular, fontSize: 8.5, color: '#555555', marginLeft: 6 },
 
-  cardsRow: { flexDirection: 'row', marginTop: 4 },
+  cardsRow: { flexDirection: 'row' },
   optionCard: {
     flex: 1,
-    height: 40,
+    height: 50,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 6,
+    borderColor: '#E9E9E9',
+    borderRadius: 4,
     backgroundColor: '#FFFFFF',
   },
-  optionCardOn: { borderColor: COLORS.orange, backgroundColor: '#FFF3EF' },
+  optionCardOn: { borderColor: COLORS.orange },
   radio: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: '#B5B5B5',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#E9E9E9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   radioOn: { backgroundColor: COLORS.orange, borderColor: COLORS.orange },
-  radioCheck: {
-    width: 3,
-    height: 6,
-    borderRightWidth: 1.4,
-    borderBottomWidth: 1.4,
-    borderColor: '#FFFFFF',
-    transform: [{ rotate: '45deg' }],
-    marginTop: -1,
+  radioTick: { width: 12, height: 12, tintColor: '#FFFFFF' },
+  optionText: {
+    fontFamily: FONT.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#888888',
+    includeFontPadding: false,
   },
-  optionText: { fontFamily: FONT.regular, fontSize: 10, color: COLORS.text },
-  optionTextOn: { color: COLORS.orange, fontFamily: FONT.medium },
+  optionTextOn: { color: '#5B5B5B' },
 });

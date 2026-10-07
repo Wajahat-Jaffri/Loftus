@@ -67,5 +67,6 @@ export const TIME_OPTIONS = (() => {
   return list;
 })();
 
-export const LISTING_FEE_PER_MONTH = 6;
+// Figma shows "$8/Monthly" on the Duration step
+export const LISTING_FEE_PER_MONTH = 8;
 export const PROCESSING_FEE = 0;
