@@ -1,28 +1,26 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  StyleSheet,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '../components/ScreenHeader';
 import OfferCard from '../components/offers/OfferCard';
 import RoleToggle from '../components/offers/RoleToggle';
 import OfferFilterModal from '../components/offers/OfferFilterModal';
-import { COLORS, FONT, BackArrow } from '../components/listing/ListingControls';
+import { COLORS, FONT } from '../components/listing/ListingControls';
 import { OFFERS, CATEGORIES } from '../constants/offersData';
 
-const Tab = ({ label, selected, onPress }) => (
-  <TouchableOpacity style={styles.tab} activeOpacity={0.7} onPress={onPress}>
-    <Text style={[styles.tabText, selected && styles.tabTextActive]}>{label}</Text>
-    <View style={[styles.tabLine, selected && styles.tabLineActive]} />
+/* Pending / Declined: 69 x 50 and 68 x 50, 2px orange underline on the active one */
+const Tab = ({ label, selected, width, onPress }) => (
+  <TouchableOpacity
+    style={[styles.tab, { width }, selected && styles.tabOn]}
+    activeOpacity={0.7}
+    onPress={onPress}
+  >
+    <Text style={selected ? styles.tabTextOn : styles.tabText}>{label}</Text>
   </TouchableOpacity>
 );
 
 const OffersScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('pending');
   const [role, setRole] = useState('landlord');
   const [category, setCategory] = useState('All');
@@ -41,27 +39,16 @@ const OffersScreen = ({ navigation }) => {
   const filterActive = propertyType !== 'All';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <BackArrow />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Offers</Text>
-        <View style={styles.headerBtn} />
-      </View>
+      <ScreenHeader title="Offers" onBack={() => navigation.goBack()} />
 
-      {/* Tabs + toggle + filter */}
+      {/* Figma row: 344 x 50 at x 16 — tabs (137) on the left, toggle + filter (133) on the right */}
       <View style={styles.tabsRow}>
         <View style={styles.tabsLeft}>
-          <Tab label="Pending" selected={tab === 'pending'} onPress={() => setTab('pending')} />
-          <Tab label="Declined" selected={tab === 'declined'} onPress={() => setTab('declined')} />
+          <Tab label="Pending" width={69} selected={tab === 'pending'} onPress={() => setTab('pending')} />
+          <Tab label="Declined" width={68} selected={tab === 'declined'} onPress={() => setTab('declined')} />
         </View>
 
         <View style={styles.tabsRight}>
@@ -70,35 +57,35 @@ const OffersScreen = ({ navigation }) => {
             style={styles.filterBtn}
             activeOpacity={0.7}
             onPress={() => setFilterOpen(true)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <View style={[styles.filterLine, { width: 30 }]} />
-            <View style={[styles.filterLine, { width: 21 }]} />
-            <View style={[styles.filterLine, { width: 12 }]} />
+            {/* ion:filter: 24 wide, 3 bars 24 / 16 / 6.4 */}
+            <View style={[styles.filterLine, { width: 24 }]} />
+            <View style={[styles.filterLine, { width: 16 }]} />
+            <View style={[styles.filterLine, { width: 6.4 }]} />
             {filterActive && <View style={styles.filterDot} />}
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Category pills */}
-      <View style={styles.pillsWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {CATEGORIES.map((c) => {
-            const selected = category === c;
-            return (
-              <TouchableOpacity
-                key={c}
-                activeOpacity={0.8}
-                onPress={() => setCategory(c)}
-                style={[styles.pill, selected && styles.pillOn]}
-              >
-                <Text style={[styles.pillText, selected && styles.pillTextOn]}>{c}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+      {/* Category chips: top 162, left 15, 27 high, 8 apart */}
+      <View style={styles.chipsRow}>
+        {CATEGORIES.map((c) => {
+          const selected = category === c;
+          return (
+            <TouchableOpacity
+              key={c}
+              activeOpacity={0.8}
+              onPress={() => setCategory(c)}
+              style={[styles.chip, selected && styles.chipOn]}
+            >
+              <Text style={[styles.chipText, selected && styles.chipTextOn]}>{c}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
+      {/* first card at Figma y 219 => 30px under the chips */}
       <FlatList
         style={styles.list}
         data={data}
@@ -109,8 +96,9 @@ const OffersScreen = ({ navigation }) => {
             onPress={(o) => navigation.navigate('OfferDetailsScreen', { offerId: o.id })}
           />
         )}
+        ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 24 + insets.bottom }]}
         ListEmptyComponent={<Text style={styles.empty}>No offers found</Text>}
       />
 
@@ -126,68 +114,80 @@ const OffersScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: {
-    height: 60,
+
+  tabsRow: {
+    height: 50,
+    marginLeft: 16,
+    marginRight: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
-  headerBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FONT.medium, fontSize: 19, color: COLORS.text },
-
-  tabsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  tabsLeft: { flexDirection: 'row', height: 50 },
+  tab: {
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  tabsLeft: { flexDirection: 'row' },
-  tab: { paddingHorizontal: 16, paddingTop: 12 },
-  tabText: { fontFamily: FONT.regular, fontSize: 14, color: COLORS.text, paddingBottom: 14 },
-  tabTextActive: { fontFamily: FONT.medium, color: COLORS.orange },
-  tabLine: { height: 2, backgroundColor: 'transparent' },
-  tabLineActive: { backgroundColor: COLORS.orange },
-  tabsRight: { flexDirection: 'row', alignItems: 'center', paddingBottom: 10 },
+  tabOn: { borderBottomWidth: 2, borderBottomColor: COLORS.orange },
+  tabText: {
+    fontFamily: FONT.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#515151',
+    includeFontPadding: false,
+  },
+  tabTextOn: {
+    fontFamily: FONT.semi,
+    fontSize: 11,
+    lineHeight: 16,
+    color: COLORS.orange,
+    includeFontPadding: false,
+  },
+  tabsRight: { flexDirection: 'row', alignItems: 'center', height: 34 },
   filterBtn: {
-    width: 32,
-    height: 32,
-    marginLeft: 16,
-    alignItems: 'flex-end',
+    width: 38,
+    height: 34,
+    marginLeft: 8,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  filterLine: { height: 3, borderRadius: 2, backgroundColor: COLORS.orange, marginVertical: 2.5 },
+  filterLine: { height: 2.5, borderRadius: 2, backgroundColor: COLORS.orange, marginVertical: 1.5 },
   filterDot: {
     position: 'absolute',
-    top: 0,
-    right: -2,
+    top: 4,
+    right: 5,
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: COLORS.red,
   },
 
-  pillsWrap: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
-  pill: {
-    height: 32,
-    minWidth: 56,
-    paddingHorizontal: 20,
-    borderRadius: 16,
+  chipsRow: { marginTop: 16, marginLeft: 15, flexDirection: 'row' },
+  chip: {
+    height: 27,
+    paddingHorizontal: 15, // Figma 16 minus the border
+    borderRadius: 50,
     borderWidth: 1,
     borderColor: COLORS.orange,
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillOn: { backgroundColor: COLORS.orange },
-  pillText: { fontFamily: FONT.medium, fontSize: 13, color: COLORS.orange },
-  pillTextOn: { color: '#FFFFFF' },
+  chipOn: { backgroundColor: COLORS.orange },
+  chipText: {
+    fontFamily: FONT.medium,
+    fontSize: 11,
+    lineHeight: 11,
+    color: COLORS.orange,
+    includeFontPadding: false,
+  },
+  chipTextOn: { color: '#FFFFFF' },
 
   list: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  listContent: { paddingTop: 30, paddingHorizontal: 15 },
   empty: {
     textAlign: 'center',
     marginTop: 40,
