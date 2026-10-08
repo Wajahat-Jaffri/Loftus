@@ -425,7 +425,8 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
 
           <Divider />
 
-          <View style={styles.gap16}>
+          {/* full-width wrapper: the slider must not sit outside its parent's bounds (Android touch) */}
+          <View style={[styles.gap16, { marginHorizontal: -15 }]}>
             <OpenHouses />
           </View>
 

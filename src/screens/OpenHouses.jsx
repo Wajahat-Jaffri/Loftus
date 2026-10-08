@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 
 const ORANGE = '#FF6C40';
 
@@ -21,44 +21,53 @@ const TimePill = ({ label }) => (
   </View>
 );
 
+const OpenHouseCard = ({ item }) => (
+  <View style={styles.card}>
+    <View style={styles.dateBlock}>
+      <View style={styles.dateRow}>
+        <Text style={styles.day}>{item.day}</Text>
+        <Text style={styles.month}>{item.month}</Text>
+      </View>
+      <Text style={styles.weekday}>{item.weekday}</Text>
+    </View>
+
+    <View style={styles.timeRow}>
+      <TimePill label={item.from} />
+      <Text style={styles.toText}>To</Text>
+      <TimePill label={item.to} />
+    </View>
+  </View>
+);
+
 /**
  * "Open Houses": Figma cards 240 x 144 (radius 15, border #EEE), gap 17.
- * Place it inside a parent with 15px side padding (it breaks out of it by itself).
+ * Slides sideways (FlatList, same pattern as the Recommendations slider).
+ * Put it in a FULL-WIDTH wrapper (marginHorizontal -15 inside the padded column).
  */
 const OpenHouses = ({ items = DEFAULT_OPEN_HOUSES }) => (
   <View>
     <Text style={styles.title}>Open Houses</Text>
 
-    <ScrollView
+    <FlatList
+      data={items}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={({ item }) => <OpenHouseCard item={item} />}
       horizontal
+      nestedScrollEnabled
+      bounces={false}
+      directionalLockEnabled
+      scrollEnabled
       showsHorizontalScrollIndicator={false}
+      decelerationRate="fast"
       style={styles.scroll}
       contentContainerStyle={styles.listContent}
-    >
-      {items.map((item) => (
-        <View key={item.id} style={styles.card}>
-          <View style={styles.dateBlock}>
-            <View style={styles.dateRow}>
-              <Text style={styles.day}>{item.day}</Text>
-              <Text style={styles.month}>{item.month}</Text>
-            </View>
-            <Text style={styles.weekday}>{item.weekday}</Text>
-          </View>
-
-          <View style={styles.timeRow}>
-            <TimePill label={item.from} />
-            <Text style={styles.toText}>To</Text>
-            <TimePill label={item.to} />
-          </View>
-        </View>
-      ))}
-    </ScrollView>
+    />
   </View>
 );
 
 const styles = StyleSheet.create({
   title: {
-    marginLeft: 7,
+    marginLeft: 22, // 15 (screen margin) + 7
     marginBottom: 10,
     fontFamily: FONT.medium,
     fontSize: 14,
@@ -66,10 +75,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     includeFontPadding: false,
   },
-  // The parent column has 15px side padding; the scroller breaks out of it
-  // so the cards can slide to the screen edge. Cards start at Figma x = 12.
+  // Full-width scroller: the parent wrapper (PropertyDetailsScreen) already
+  // breaks out of the 15px column padding, so touches work on Android.
+  // Cards start at Figma x = 12.
   scroll: {
-    marginHorizontal: -15,
+    flexGrow: 0,
   },
   listContent: {
     paddingLeft: 12,
