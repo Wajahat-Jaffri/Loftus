@@ -28,11 +28,7 @@ const Feature = ({ icon, label }) => (
   </View>
 );
 
-const Divider = () => (
-  <View style={styles.dividerBox}>
-    <View style={styles.dividerLine} />
-  </View>
-);
+const Divider = () => <View style={styles.dividerLine} />;
 
 export const HeroCard = ({ listing }) => {
   const [index, setIndex] = useState(0);
@@ -294,14 +290,14 @@ const styles = StyleSheet.create({
     color: '#4E4E4E',
     includeFontPadding: false,
   },
-  dividerBox: {
-    width: 9,
-    height: 16,
-    marginHorizontal: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+  /* Figma: rotated 9px line has ~0 layout width => 5 + 5 = 10px between items */
+  dividerLine: {
+    width: 1,
+    height: 9,
+    marginHorizontal: 4.5,
+    backgroundColor: '#4E4E4E',
+    opacity: 0.5,
   },
-  dividerLine: { width: 1, height: 9, backgroundColor: '#4E4E4E', opacity: 0.5 },
   heroAddress: {
     marginTop: 10,
     height: 18,

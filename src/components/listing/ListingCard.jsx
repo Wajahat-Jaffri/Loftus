@@ -13,12 +13,7 @@ const Feature = ({ icon, label }) => (
   </View>
 );
 
-/* the Figma divider is a rotated 9px box => a 9px tall hairline in a 9px wide slot */
-const Divider = () => (
-  <View style={styles.dividerBox}>
-    <View style={styles.dividerLine} />
-  </View>
-);
+const Divider = () => <View style={styles.dividerLine} />;
 
 /**
  * Listing card (Figma 345 x 343, radius 12).
@@ -184,14 +179,14 @@ const styles = StyleSheet.create({
     color: '#4E4E4E',
     includeFontPadding: false,
   },
-  dividerBox: {
-    width: 9,
-    height: 16,
-    marginHorizontal: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+  /* Figma: rotated 9px line has ~0 layout width => 5 + 5 = 10px between items */
+  dividerLine: {
+    width: 1,
+    height: 9,
+    marginHorizontal: 4.5,
+    backgroundColor: '#4E4E4E',
+    opacity: 0.5,
   },
-  dividerLine: { width: 1, height: 9, backgroundColor: '#4E4E4E', opacity: 0.5 },
   address: {
     marginTop: 10,
     height: 18,

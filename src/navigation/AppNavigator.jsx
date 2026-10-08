@@ -31,6 +31,9 @@ import CreateListingScreen from '../screens/CreateListingScreen';
 import CreateRentalListingScreen from '../screens/CreateRentalListingScreen';
 import OffersScreen from '../screens/OffersScreen';
 import OfferDetailsScreen from '../screens/OfferDetailsScreen';
+import LeasesScreen from '../screens/LeasesScreen';
+import LeaseDetailsScreen from '../screens/LeaseDetailsScreen';
+import CreateLeaseScreen from '../screens/CreateLeaseScreen';
 import { FavoritesProvider } from '../context/FavoritesContext';
 
 const Stack = createNativeStackNavigator();
@@ -75,6 +78,9 @@ const AppNavigator = () => {
           />
           <Stack.Screen name="Offers" component={OffersScreen} />
           <Stack.Screen name="OfferDetailsScreen" component={OfferDetailsScreen} />
+          <Stack.Screen name="Leases" component={LeasesScreen} />
+          <Stack.Screen name="LeaseDetailsScreen" component={LeaseDetailsScreen} />
+          <Stack.Screen name="CreateLeaseScreen" component={CreateLeaseScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </FavoritesProvider>
