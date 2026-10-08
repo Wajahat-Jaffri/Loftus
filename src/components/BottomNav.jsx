@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { ICONS, IMAGES } from '../assets';
+import { ICONS } from '../assets';
 
 const ORANGE = '#FF6C40';
 const GREY = '#808080';
@@ -17,29 +17,29 @@ const FONT = {
 const TABS = [
   { key: 'Home', label: 'Home', icon: ICONS.home, route: null },
   { key: 'Favorites', label: 'Favorites', icon: require('../assets/icons/NavHeart.png'), route: 'FavoritesScreen' },
-  { key: 'Explore', label: 'Explore', icon: ICONS.search, route: 'PropertyListingScreen' },
-  { key: 'Profile', label: 'Profile', icon: null, avatar: true, route: 'ProfileScreen' },
+  { key: 'Explore', label: 'Explore', icon: ICONS.search, activeIcon: require('../assets/icons/SearchActive.png'), route: 'PropertyListingScreen' },
+  { key: 'Profile', label: 'Profile', icon: ICONS.user, route: 'ProfileScreen' },
 ];
 
-const NavItem = ({ tab, isActive, onPress }) => (
-  <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
-    {tab.avatar ? (
-      <Image source={IMAGES.profile} style={styles.avatar} />
-    ) : (
+/* Figma: icons 30 (the active one 34), label 12 / 400 (active 500), gap 4 */
+const NavItem = ({ tab, isActive, onPress }) => {
+  const size = isActive ? 34 : 30;
+  return (
+    <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
       <Image
-        source={tab.icon}
-        style={[styles.icon, { tintColor: isActive ? ORANGE : GREY }]}
+        source={isActive && tab.activeIcon ? tab.activeIcon : tab.icon}
+        style={{ width: size, height: size, tintColor: isActive ? ORANGE : GREY }}
         resizeMode="contain"
       />
-    )}
-    <Text style={[styles.label, isActive && !tab.avatar ? styles.labelActive : styles.labelInactive]}>
-      {tab.label}
-    </Text>
-  </TouchableOpacity>
-);
+      <Text style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}>
+        {tab.label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 /**
- * Figma navbar (375 x 70): padding 12 / 24, icons 30, labels 12, gap 4.
+ * Figma navbar (375 x 74): padding 12 / 24, shadow 0 -2 6 rgba(0,0,0,.1).
  * Props: active ('Home' | 'Favorites' | 'Explore' | 'Profile' | ''), navigation.
  */
 const BottomNav = ({ active = 'Explore', navigation }) => {
@@ -70,17 +70,10 @@ const BottomNav = ({ active = 'Explore', navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  wrap: {
-    backgroundColor: '#FFFFFF',
-  },
-  shade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 2,
-  },
+  wrap: { backgroundColor: '#FFFFFF' },
+  shade: { position: 'absolute', left: 0, right: 0, height: 2 },
   bottomNav: {
-    height: 70,
+    height: 74,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -88,34 +81,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   navItem: {
-    height: 48,
-    minWidth: 36,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  icon: {
-    width: 30,
-    height: 30,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
   },
   label: {
     marginTop: 4,
     fontSize: 12,
-    lineHeight: 14,
+    lineHeight: 12,
     includeFontPadding: false,
   },
-  labelInactive: {
-    fontFamily: FONT.regular,
-    color: GREY,
-  },
-  labelActive: {
-    fontFamily: FONT.medium,
-    color: ORANGE,
-  },
+  labelInactive: { fontFamily: FONT.regular, color: GREY },
+  labelActive: { fontFamily: FONT.medium, color: ORANGE },
 });
 
 export default BottomNav;

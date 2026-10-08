@@ -61,8 +61,8 @@ const FavoriteCard = ({ item, onToggleFavorite, onPress }) => {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Image
-              source={ICONS.heartFilled || ICONS.heart}
-              style={[styles.favoriteIcon, { tintColor: ORANGE }]}
+              source={require('../assets/icons/HeartOrange.png')}
+              style={styles.favoriteIcon}
             />
           </TouchableOpacity>
 
@@ -182,7 +182,6 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     width: 32,
     height: 32,
-    tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
   paginationContainer: {
