@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { ICONS, IMAGES } from '../assets';
+import { IMAGES } from '../assets';
 
 const FONT = {
   regular: 'Poppins-Regular',
@@ -9,7 +9,7 @@ const FONT = {
 
 /**
  * "Location": title 14/500, map frame 345 x 215 (radius 12),
- * white 36px expand button at top 12 / right 3.
+ * white expand button 29 x 29 at the top right of the map.
  *
  * Put the exported Figma crop at src/assets/images/locationMap.png and add
  * `locationMap: require('./images/locationMap.png')` to IMAGES.
@@ -37,11 +37,11 @@ const LocationSection = ({ onExpand }) => {
           onPress={onExpand}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          {ICONS.expand ? (
-            <Image source={ICONS.expand} style={styles.expandIcon} resizeMode="contain" />
-          ) : (
-            <Text style={styles.expandGlyph}>⤢</Text>
-          )}
+          <Image
+            source={require('../assets/icons/ExpandMap.png')}
+            style={styles.expandIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -79,26 +79,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#000000',
   },
+  // Figma button: 29.22 x 28.75, white, small radius
   expandButton: {
     position: 'absolute',
-    top: 12,
-    right: 3,
-    width: 36,
-    height: 36,
-    borderRadius: 60,
+    top: 14,
+    right: 6,
+    width: 29,
+    height: 29,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // icon is black already (no tint); 20 box with a 16px glyph
   expandIcon: {
-    width: 22,
-    height: 22,
-    tintColor: '#444444',
-  },
-  expandGlyph: {
-    fontSize: 20,
-    lineHeight: 24,
-    color: '#444444',
+    width: 20,
+    height: 20,
+    
   },
 });
 

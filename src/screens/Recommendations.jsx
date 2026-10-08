@@ -64,10 +64,10 @@ const RecoCard = ({ item, onPress }) => {
             onPress={() => toggleFavorite(item)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Image
-              source={isFavorite && ICONS.heartFilled ? ICONS.heartFilled : ICONS.heart}
-              style={[styles.heartIcon, isFavorite && { tintColor: ORANGE }]}
-            />
+           <Image
+  source={isFavorite ? require('../assets/icons/HeartOrange.png') : ICONS.heart}
+  style={[styles.heartIcon, !isFavorite && { tintColor: '#FFFFFF' }]}
+/>
           </TouchableOpacity>
 
           <View style={styles.imageDots} pointerEvents="none">
@@ -248,7 +248,6 @@ const styles = StyleSheet.create({
   heartIcon: {
     width: 32,
     height: 32,
-    tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
   imageDots: {

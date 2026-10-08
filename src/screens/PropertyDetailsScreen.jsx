@@ -274,8 +274,8 @@ const PropertyDetailsScreen = ({ navigation, route }) => {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Image
-              source={isFavorite && ICONS.heartFilled ? ICONS.heartFilled : ICONS.heart}
-              style={[styles.favoriteIcon, isFavorite && { tintColor: ORANGE }]}
+              source={isFavorite ? require('../assets/icons/HeartOrange.png') : ICONS.heart}
+              style={[styles.favoriteIcon, !isFavorite && { tintColor: '#FFFFFF' }]}
             />
           </TouchableOpacity>
 
@@ -500,7 +500,6 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     width: 32,
     height: 32,
-    tintColor: '#FFFFFF',
     resizeMode: 'contain',
   },
   dots: {
