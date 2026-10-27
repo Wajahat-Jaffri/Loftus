@@ -15,7 +15,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleSendResetLink = () => {
     if (email.trim()) {
-      navigation.navigate('CheckMailScreen', { email: email.trim() });
+      navigation.navigate('ResetPasswordScreen', { email: email.trim() });
     } else {
       Alert.alert('Email required', 'Please enter your email address');
     }

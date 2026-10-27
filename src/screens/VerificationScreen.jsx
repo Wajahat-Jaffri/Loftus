@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { AuthScreen, Title, Subtitle, PrimaryButton, C, F } from '../components/AuthControls';
 
-const VerificationScreen = ({ navigation }) => {
+const VerificationScreen = ({ navigation, route }) => {
+  const email = route?.params?.email;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(0); // 0 => "Resend Code"
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -45,7 +46,14 @@ const VerificationScreen = ({ navigation }) => {
   const handleVerify = () => {
     console.log('Entered OTP:', code.join(''));
     // TODO: verify OTP with API
-    navigation.replace('PropertyListingScreen');
+    // After sign-up: listing screen + the "You are almost there!" email modal on top
+    navigation.reset({
+      index: 1,
+      routes: [
+        { name: 'PropertyListingScreen' },
+        { name: 'EmailVerifyScreen', params: { email } },
+      ],
+    });
   };
 
   const timerOn = isTimerActive && timer > 0;

@@ -26,7 +26,7 @@ const SignUpScreen = ({ navigation }) => {
 
   const handleSignUp = () => {
     // TODO: call sign-up API here
-    navigation.navigate('VerificationScreen');
+    navigation.navigate('VerificationScreen', { email: email.trim() });
   };
 
   return (

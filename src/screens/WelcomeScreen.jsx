@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { IMAGES } from '../assets';
 import { PrimaryButton } from '../components/AuthControls';
+import OnboardingDots from '../components/OnboardingDots';
 
 const WelcomeScreen = ({ navigation }) => (
   <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -16,8 +17,11 @@ const WelcomeScreen = ({ navigation }) => (
       <Text style={styles.subtitle}>{'A Click Away From Finding\nYour Dream Home'}</Text>
     </View>
 
+    {/* Figma y 666: dot 1 of 5 is active */}
+    <OnboardingDots count={5} active={0} style={styles.dots} />
+
     <View style={styles.bottom}>
-      <PrimaryButton label="Get Started" onPress={() => navigation.navigate('SignInScreen')} />
+      <PrimaryButton label="Get Started" onPress={() => navigation.navigate('OnboardingScreen')} />
     </View>
   </SafeAreaView>
 );
@@ -28,7 +32,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 157, // group centre sits 56.5px above the screen centre in Figma
+    paddingBottom: 118, // 157 minus the 39px the dots now take (keeps the logo where it was)
   },
   logo: { width: 33, height: 64, tintColor: '#FF6C40' },
   title: {
@@ -48,6 +52,7 @@ const styles = StyleSheet.create({
     color: '#505050',
     textAlign: 'center',
   },
+  dots: { marginBottom: 30 },
   bottom: { paddingHorizontal: 15, paddingBottom: 51 },
 });
 

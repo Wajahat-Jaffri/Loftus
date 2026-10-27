@@ -6,6 +6,12 @@ export const IMAGES = {
   house3: require('./images/house3.jpg'),
   map: require('./images/map.png'),
 
+  // Onboarding slides (Enter Location / Find Property / Make Offer / Take key)
+  onboardLocation: require('./images/onboarding_location.png'),
+  onboardProperty: require('./images/onboarding_property.png'),
+  onboardOffer: require('./images/onboarding_offer.png'),
+  onboardKey: require('./images/onboarding_key.png'),
+
   // Profile section
   profile: require('./images/profile.jpg'),
 
@@ -35,6 +41,9 @@ export const ICONS = {
   user: require('./icons/User.png'),
   search: require('./icons/MagnifyingGlass (1).png'),
   home: require('./icons/House.png'),
+
+  // Password eye (sign in / sign up / create new password)
+  eyeOff: require('./icons/EyeSlash.png'),
 
   // Property Details screen
   share: require('./icons/ShareIcon.png'),

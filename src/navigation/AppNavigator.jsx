@@ -4,10 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import VerificationScreen from '../screens/VerificationScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import EmailVerifyScreen from '../screens/EmailVerifyScreen';
 import CreateNewPasswordScreen from '../screens/CreateNewPasswordScreen';
 import CheckMailScreen from '../screens/CheckMailScreen';
 import ChangePhoneNumberScreen from '../screens/ChangePhoneNumberScreen';
@@ -48,14 +51,21 @@ const AppNavigator = () => {
         >
           <Stack.Screen name="SplashScreen" component={SplashScreen} />
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
+          <Stack.Screen name="OnboardingScreen" component={OnboardingScreen} />
           <Stack.Screen name="SignInScreen" component={SignInScreen} />
           <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
           <Stack.Screen name="VerificationScreen" component={VerificationScreen} />
           <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen} />
           <Stack.Screen name="CreateNewPasswordScreen" component={CreateNewPasswordScreen} />
           <Stack.Screen name="CheckMailScreen" component={CheckMailScreen} />
           <Stack.Screen name="ChangePhoneNumberScreen" component={ChangePhoneNumberScreen} />
           <Stack.Screen name="PropertyListingScreen" component={PropertyListingScreen} />
+          <Stack.Screen
+            name="EmailVerifyScreen"
+            component={EmailVerifyScreen}
+            options={{ presentation: 'transparentModal', animation: 'fade' }}
+          />
           <Stack.Screen name="Filters" component={FilterScreen} />
           <Stack.Screen name="MapViewScreen" component={MapViewScreen} />
           <Stack.Screen name="PropertyDetailsScreen" component={PropertyDetailsScreen} />
